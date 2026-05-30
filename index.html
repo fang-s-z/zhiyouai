@@ -1,0 +1,2213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>智游AI · 华丽旅行故事工坊</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+
+    <!-- 高德地图安全密钥配置（必须在加载API之前） -->
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: '525861bb46cce0d2c1248b9913af1554'
+        };
+    </script>
+
+    <!-- 高德地图JS API 2.0（已插入你的Key） -->
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=a5a982b43d4cb9ae9031358d2410d047"></script>
+
+    <style>
+        /* 自定义主题色，防止按钮透明 */
+        .bg-primary { background-color: #3B82F6; }
+        .text-primary { color: #3B82F6; }
+        .border-primary { border-color: #3B82F6; }
+        .bg-assistGreen { background-color: #10B981; }
+
+        .text-assistGreen { color: #10B981; }
+        .bg-assistRed { background-color: #EF4444; }
+        .text-assistRed { color: #EF4444; }
+
+        * {
+            border-radius: 16px !important;
+            transition: all 0.2s ease;
+        }
+        body {
+            background-color: #FDF8ED;
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 235, 205, 0.4) 2%, transparent 2.5%);
+            background-size: 28px 28px;
+            font-family: 'Inter', sans-serif;
+        }
+        .dark body {
+            background-color: #121212;
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 215, 150, 0.08) 2%, transparent 2.5%);
+        }
+        .card-hover {
+            transition: transform 0.25s, box-shadow 0.3s;
+        }
+        .card-hover:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.15);
+        }
+        .nav-blur {
+            backdrop-filter: blur(16px);
+            background: rgba(255, 248, 235, 0.85);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .dark .nav-blur {
+            background: rgba(18, 18, 18, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .page {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .page.active-page {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: fadeSlideUp 0.4s ease-out;
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-link.active-nav::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #3B82F6;
+            border-radius: 6px;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 245, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 245, 200, 0.6);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 30, 35, 0.85);
+            border-color: rgba(255, 215, 150, 0.2);
+        }
+        .float-add-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            border-radius: 50% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s;
+        }
+        .float-add-btn:hover {
+            transform: scale(1.05);
+        }
+        .story-card,
+        .spot-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .story-card:hover,
+        .spot-card:hover {
+            transform: scale(1.02);
+        }
+        .ranking-item {
+            border-bottom: 1px dashed #e2e8f0;
+            padding: 8px 0;
+        }
+        .dark .ranking-item {
+            border-bottom-color: #334155;
+        }
+        #mapContainer {
+            height: 400px;
+            border-radius: 20px !important;
+            overflow: hidden;
+        }
+        .tab-btn {
+            border-radius: 40px !important;
+        }
+        /* 确保模态框按钮可点 */
+        #loginModal button,
+        #loginModal .cursor-pointer {
+            position: relative;
+            z-index: 10;
+        }
+        /* 手账详情样式 */
+        .handbook-detail-photo {
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+        /* 高德地图信息窗口样式优化 */
+        .amap-info-content {
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="transition-colors duration-300 dark:bg-gray-900">
+<!-- 导航栏 -->
+<nav id="mainNav" class="fixed top-0 left-0 w-full z-50 py-3 transition-all duration-300 nav-blur shadow-sm">
+    <div class="container mx-auto px-5 flex items-center justify-between">
+        <div class="flex items-center gap-2"><i class="fa-solid fa-feather-pointed text-2xl text-primary"></i><span class="text-xl font-title tracking-wide bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">智游AI</span></div>
+        <div class="hidden md:flex items-center gap-6">
+            <a href="#" data-page="home" class="nav-link text-gray-700 dark:text-gray-200 hover:text-primary">首页</a>
+            <a href="#" data-page="stories" class="nav-link text-gray-700 dark:text-gray-200 hover:text-primary">📖 故事集</a>
+            <a href="#" data-page="handbook" class="nav-link text-gray-700 dark:text-gray-200 hover:text-primary">🎨 手账工坊</a>
+            <a href="#" data-page="aiplanner" class="nav-link text-gray-700 dark:text-gray-200 hover:text-primary">✨ AI规划师</a>
+            <a href="#" data-page="profile" class="nav-link text-gray-700 dark:text-gray-200 hover:text-primary">👤 个人旅行舱</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="themeSwitch" class="text-xl text-gray-700 dark:text-gray-200"><i class="fa-solid fa-moon"></i></button>
+            <div id="authArea">
+                <button id="loginBtn" onclick="openLoginModal()" class="px-5 py-2 rounded-full border border-primary/40 text-primary hover:bg-primary/10 text-sm font-medium cursor-pointer">登录 / 注册</button>
+                <div id="userProfile" class="hidden items-center gap-2 cursor-pointer relative" onclick="toggleProfileMenu()">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-user-astronaut text-sm"></i></div>
+                    <span id="userNickname" class="text-sm font-medium text-gray-800 dark:text-gray-100">用户</span><i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+                <div id="profileMenu" class="absolute top-full right-0 mt-3 w-56 bg-white/90 dark:bg-gray-800/95 backdrop-blur-md rounded-2xl shadow-xl py-2 hidden z-50 border border-gray-200 dark:border-gray-700">
+                    <a href="#" onclick="switchToPage('profile'); closeProfileMenu();" class="block px-5 py-2 text-sm hover:bg-gray-100"><i class="fa-regular fa-calendar mr-2"></i>我的行程</a>
+                    <a href="#" onclick="switchToPage('handbook'); closeProfileMenu();" class="block px-5 py-2 text-sm hover:bg-gray-100"><i class="fa-regular fa-bookmark mr-2"></i>我的手账</a>
+                    <a href="#" onclick="switchToPage('profile'); setTimeout(()=>document.getElementById('expenseSection')?.scrollIntoView({behavior:'smooth'}),100); closeProfileMenu();" class="block px-5 py-2 text-sm hover:bg-gray-100"><i class="fa-regular fa-wallet mr-2"></i>预算记录</a>
+                    <div class="border-t my-1"></div>
+                    <button onclick="handleLogout()" class="w-full text-left px-5 py-2 text-sm text-red-500 hover:bg-gray-100"><i class="fa-solid fa-sign-out-alt mr-2"></i>退出登录</button>
+                </div>
+            </div>
+            <button id="menuBtnMobile" class="md:hidden text-2xl"><i class="fa-solid fa-bars"></i></button>
+        </div>
+    </div>
+</nav>
+
+<main class="pt-20 pb-12">
+    <!-- 首页 -->
+    <div id="page-home" class="page active-page">
+        <div class="relative h-[85vh] flex items-center justify-center overflow-hidden rounded-none">
+            <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920" class="absolute inset-0 w-full h-full object-cover brightness-75">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
+            <div class="relative z-10 text-center text-white px-5">
+                <h1 class="text-5xl md:text-7xl mb-5 drop-shadow-2xl">每一次旅行，<br>都是未完待续的故事</h1>
+                <p class="text-lg md:text-2xl mb-8 max-w-2xl mx-auto opacity-90">AI为你编织专属旅途记忆，让灵感与风景相遇</p>
+                <button onclick="switchToPage('aiplanner')" class="bg-white/20 backdrop-blur-sm border border-white/50 px-8 py-4 rounded-full text-xl font-bold hover:bg-white/30 transition-all">✈️ 开启智能规划</button>
+            </div>
+        </div>
+        <div class="container mx-auto px-5 py-16">
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div onclick="switchToPage('aiplanner')" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-robot text-5xl text-primary mb-3"></i><h3 class="text-xl font-bold">AI行程师</h3><p class="text-gray-600 dark:text-gray-300">根据你的喜好定制独一无二的故事线</p></div>
+                <div onclick="switchToPage('handbook')" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-journal-whills text-5xl text-green-500 mb-3"></i><h3 class="text-xl font-bold">手账珍藏馆</h3><p class="text-gray-600 dark:text-gray-300">照片+笔记+贴纸，永久封存旅途感动</p></div>
+                <div onclick="switchToPage('aiplanner'); setTimeout(()=>document.querySelector('[data-aitab=map]').click(), 100)" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-map-location-dot text-5xl text-red-500 mb-3"></i><h3 class="text-xl font-bold">灵动地图动线</h3><p class="text-gray-600 dark:text-gray-300">智能串联景点，不走回头路</p></div>
+            </div>
+        </div>
+
+        <!-- 旅人笔记（10个独立故事） -->
+        <div class="container mx-auto px-5 py-8 border-t border-gray-200 dark:border-gray-700">
+            <h2 class="text-3xl font-title mb-2 text-center">📝 旅人笔记 · 真实故事</h2>
+            <p class="text-center text-gray-500 mb-8">点击卡片，阅读完整旅途回忆</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-6" id="storyGridHome"></div>
+        </div>
+
+        <!-- 景点推荐 + 排行榜 -->
+        <div class="container mx-auto px-5 py-8 grid md:grid-cols-2 gap-8">
+            <div class="bg-white/60 dark:bg-gray-800/60 rounded-2xl p-5 shadow">
+                <h3 class="text-2xl font-title mb-4 flex items-center"><i class="fa-regular fa-compass text-primary mr-2"></i> 必去景点推荐</h3>
+                <div class="space-y-4" id="spotRecommendList"></div>
+            </div>
+            <div class="bg-white/60 dark:bg-gray-800/60 rounded-2xl p-5 shadow">
+                <h3 class="text-2xl font-title mb-4 flex items-center"><i class="fa-solid fa-fire-flame-curved text-red-500 mr-2"></i> 热门城市排行榜</h3>
+                <div class="space-y-2" id="cityRankingList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 故事集页面 -->
+    <div id="page-stories" class="page">
+        <div class="container mx-auto px-5 py-8">
+            <h2 class="text-4xl font-title mb-3 text-center bg-gradient-to-r from-amber-700 to-blue-500 bg-clip-text text-transparent">🗺️ 旅人的故事集</h2>
+            <p class="text-center text-gray-500 mb-12">每一段路途都值得被倾听</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8" id="allStoriesGrid"></div>
+        </div>
+        <div class="float-add-btn" onclick="switchToPage('handbook')">
+            <i class="fa-solid fa-plus text-white text-2xl"></i>
+        </div>
+    </div>
+
+    <!-- 景点详情页 -->
+    <div id="page-spot-detail" class="page">
+        <div class="container mx-auto px-5 py-6 max-w-5xl">
+            <button onclick="goBack()" class="mb-4 text-primary flex items-center gap-1 text-lg"><i class="fa-solid fa-arrow-left"></i> 返回首页</button>
+            <div id="spotDetailContent" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"></div>
+        </div>
+    </div>
+
+    <!-- 故事详情页 -->
+    <div id="page-story-detail" class="page">
+        <div class="container mx-auto px-5 py-6 max-w-4xl">
+            <button onclick="goBackToStories()" class="mb-4 text-primary flex items-center gap-1 text-lg"><i class="fa-solid fa-arrow-left"></i> 返回故事集</button>
+            <div id="storyDetailContent" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"></div>
+        </div>
+    </div>
+
+    <!-- 手账工坊 -->
+    <div id="page-handbook" class="page">
+        <div class="container mx-auto px-5 max-w-5xl py-6">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-amber-100">
+                <h2 class="text-3xl font-title mb-2">📒 旅行手账工坊</h2>
+                <p class="text-gray-500 mb-6">把回忆装订成册，永远鲜活</p>
+                <div id="handbookEditor" class="space-y-5">
+                    <div><label class="font-bold">手账标题</label><input id="handbookTitle" type="text" placeholder="例如：大理的夏天" class="w-full border-2 border-dashed border-gray-300 p-3 rounded-xl bg-transparent"></div>
+                    <div><label class="font-bold">📸 上传照片</label><div class="border-2 border-dashed p-6 text-center rounded-2xl cursor-pointer hover:border-primary" onclick="document.getElementById('photoInput').click()"><i class="fa-solid fa-cloud-upload-alt text-3xl text-gray-400"></i><p>点击上传</p><input id="photoInput" type="file" accept="image/*" multiple hidden onchange="handlePhotoUpload(event)"></div><div id="photoGallery" class="grid grid-cols-3 gap-3 mt-3"></div></div>
+                    <div><label class="font-bold">📝 旅行笔记</label><textarea id="handbookNotes" rows="4" class="w-full border-2 border-dashed p-3 rounded-xl" placeholder="记录下那些怦然心动的瞬间..."></textarea></div>
+                    <div><label class="font-bold">🎨 装饰贴纸</label><div class="flex flex-wrap gap-3 text-3xl"><span onclick="addSticker('🏖️')" class="cursor-pointer hover:scale-125">🏖️</span><span onclick="addSticker('🏔️')">🏔️</span><span onclick="addSticker('🍜')">🍜</span><span onclick="addSticker('✈️')">✈️</span><span onclick="addSticker('📸')">📸</span><span onclick="addSticker('🗺️')">🗺️</span><span onclick="addSticker('🏯')">🏯</span></div><div id="stickerArea" class="min-h-[60px] border-dashed border-2 p-2 mt-2 flex flex-wrap gap-2"></div></div>
+                    <div class="flex gap-3"><button onclick="saveHandbook()" class="bg-amber-800 text-white px-6 py-2 rounded-full flex-1"><i class="fa-regular fa-floppy-disk"></i> 保存手账</button><button onclick="viewHandbooks()" class="bg-gray-600 text-white px-6 py-2 rounded-full"><i class="fa-regular fa-folder-open"></i> 我的手账本</button></div>
+                </div>
+                <!-- 手账列表与详情 -->
+                <div id="handbookList" class="hidden mt-8">
+                    <div class="flex justify-between items-center"><h3 class="font-bold text-xl">📚 我的手账集</h3><button onclick="closeHandbookList()" class="text-gray-500">✖️ 关闭</button></div>
+                    <div id="handbookGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4"></div>
+                </div>
+                <div id="handbookDetailView" class="hidden mt-8">
+                    <button onclick="backToHandbookList()" class="mb-4 text-primary flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> 返回手账列表</button>
+                    <div id="handbookDetailContent" class="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI规划师 -->
+    <div id="page-aiplanner" class="page">
+        <div class="container mx-auto px-5">
+            <div class="text-center mb-6"><h2 class="text-4xl font-title">🧠 AI 智能旅行规划师</h2><button onclick="toggleApiKeyInput()" class="text-xs underline opacity-70">⚙️ API设置</button><div id="apiKeyBox" class="hidden mt-2"><input id="apiKeyInput" type="password" placeholder="OpenAI Key" class="border p-1 rounded"><button onclick="saveApiKey()" class="bg-green-600 text-white px-3 ml-1 rounded">保存</button></div></div>
+            <div class="flex flex-wrap justify-center gap-2 mb-5">
+                <button class="tab-btn bg-blue-500 text-white px-4 py-2" data-aitab="basic">📋 基础规划</button>
+                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="tools">🔧 实用工具</button>
+                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="personal">✨ 个性定制</button>
+                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="assist">💬 出行助手</button>
+                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="voice">🎤 语音规划</button>
+                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="map">🗺️ 地图动线</button>
+            </div>
+            <!-- 各面板 -->
+            <div id="basicPanel" class="glass-panel p-5 rounded-2xl">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-white/50 dark:bg-gray-800/50 p-5 rounded-2xl">
+                        <label class="block mb-2">我想去 <input id="cityInput" class="border-b-2 w-40" placeholder="城市"></label>
+                        <div class="mt-3">天数 <span id="dayNum">5</span><input type="range" id="dayRange" min="1" max="15" value="5" class="w-full"></div>
+                        <select id="budgetSel" class="w-full border p-2 mt-2 rounded"><option>穷游</option><option selected>舒适</option><option>奢华</option></select>
+                        <div class="mt-3"><p>偏好</p><div class="flex flex-wrap gap-2"><label><input type="checkbox" class="pref-check" value="美食">美食</label><label><input type="checkbox" class="pref-check" value="历史">历史</label><label><input type="checkbox" class="pref-check" value="自然">自然</label></div></div>
+                        <button onclick="generatePlanWithAI()" class="bg-blue-500 text-white w-full py-2 rounded-full mt-4">🚀 生成故事行程</button>
+                        <div id="loadProcess" class="hidden mt-2 text-center">✨ AI创作中...</div>
+                    </div>
+                    <div id="planPreview" class="bg-gray-100 dark:bg-gray-700 rounded-2xl p-4 h-[500px] overflow-auto"><div class="flex justify-center items-center h-full text-gray-400">✨ 行程蓝图将在这里呈现</div></div>
+                </div>
+            </div>
+            <div id="toolsPanel" class="hidden grid md:grid-cols-2 gap-5 mt-4">
+                <div class="glass-panel p-4"><h3 class="font-bold">🚆 交通方案</h3><p class="text-sm text-gray-500 mb-2">对比火车与飞机</p><input id="fromCity" placeholder="出发城市" class="border p-1 w-full"><input id="toCity" placeholder="到达城市" class="border p-1 w-full mt-1"><button onclick="getTrafficAI()" class="bg-green-500 text-white px-3 py-1 mt-2 rounded">对比</button><div id="trafficResult" class="mt-2 text-sm"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">🏨 酒店推荐</h3><input id="hotelCity" placeholder="城市" class="border p-1 w-full"><input id="hotelBudget" placeholder="预算/晚" type="number" class="border p-1 w-full mt-1"><button onclick="getHotelAI()" class="bg-purple-600 text-white px-3 py-1 mt-2 rounded">智能匹配</button><div id="hotelResult" class="mt-2"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">☁️ 天气建议</h3><input id="weatherCity" placeholder="目的地" class="border p-1 w-full"><button onclick="getWeatherAI()" class="bg-yellow-600 text-white px-3 py-1 mt-2 rounded">查询</button><div id="weatherResult" class="mt-2"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">📋 导出清单</h3><button onclick="exportChecklist()" class="bg-gray-700 text-white px-3 py-1 rounded">生成打印单</button><div id="checklistPreview" class="mt-2 text-xs"></div></div>
+            </div>
+            <div id="personalPanel" class="hidden grid md:grid-cols-2 gap-5 mt-4">
+                <div class="glass-panel p-4"><h3 class="font-bold">💰 预算分配</h3><input id="totalBudget" type="number" placeholder="总预算" class="border p-1 w-full"><button onclick="autoBudgetAI()" class="bg-indigo-600 text-white px-3 py-1 mt-2 rounded">智能拆分</button><div id="budgetSplit" class="mt-2 text-sm"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">📊 同行投票</h3><button onclick="createVote()" class="bg-purple-600 text-white px-3 py-1 rounded">创建投票</button><div id="voteList" class="mt-2"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">⚠️ 避坑预警</h3><button onclick="getWarnings()" class="bg-red-600 text-white px-3 py-1 rounded">景区现状</button><div id="warningBox" class="mt-2 text-sm"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">🎭 风俗提醒</h3><input id="cultureCity" placeholder="城市" class="border p-1 w-full"><button onclick="getCultureTips()" class="bg-teal-600 text-white px-3 py-1 mt-2 rounded">获取</button><div id="cultureResult" class="mt-2"></div></div>
+            </div>
+            <div id="assistPanel" class="hidden grid md:grid-cols-2 gap-5 mt-4">
+                <div class="glass-panel p-4"><h3 class="font-bold">💬 24h问答</h3><textarea id="qaQuestion" rows="2" placeholder="任何旅行问题..." class="border p-1 w-full"></textarea><button onclick="askTravelQA()" class="bg-blue-600 text-white px-3 py-1 mt-2 rounded">提问</button><div id="qaAnswer" class="mt-2 text-sm"></div></div>
+                <div class="glass-panel p-4"><h3 class="font-bold">🧳 行李清单</h3><input id="luggageCity" placeholder="目的地" class="border p-1 w-full"><input id="luggageDays" placeholder="天数" class="border p-1 w-full mt-1"><button onclick="generateLuggageList()" class="bg-cyan-600 text-white px-3 py-1 mt-2 rounded">生成</button><div id="luggageResult" class="mt-2"></div></div>
+            </div>
+            <div id="voicePanel" class="hidden text-center glass-panel p-6 mt-4"><h3 class="font-bold">🎙️ 语音对话规划</h3><button onclick="startVoiceRecognition()" class="bg-purple-600 text-white px-6 py-3 rounded-full"><i class="fa-solid fa-microphone"></i> 开始说话</button><p id="voiceText" class="mt-3">语音显示区域</p><button onclick="processVoiceCommand()" class="mt-2 bg-blue-600 text-white px-4 py-1 rounded">识别生成行程</button></div>
+            <div id="mapPanel" class="hidden glass-panel p-4 mt-4"><h3 class="font-bold">🗺️ 行程动态地图</h3><div id="mapContainer" class="w-full rounded-2xl"></div><button onclick="refreshMap()" class="mt-2 bg-blue-500 text-white px-4 py-1 rounded">刷新路线</button></div>
+        </div>
+    </div>
+
+    <!-- 个人中心 -->
+    <div id="page-profile" class="page">
+        <div class="container mx-auto px-5 max-w-6xl py-6">
+            <div class="bg-gradient-to-br from-amber-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 shadow-lg">
+                <div class="flex justify-between items-center flex-wrap"><h2 class="text-3xl font-title">🧳 我的旅行舱</h2><button onclick="openPreferences()" class="bg-blue-500/20 px-4 py-1 rounded-full text-sm"><i class="fa-regular fa-sliders"></i> 偏好设置</button></div>
+                <div class="mt-6"><h3 class="font-bold text-xl">📌 我的行程</h3><div id="tripsListProfile" class="grid md:grid-cols-2 gap-4 mt-2">暂无行程</div></div>
+                <div id="expenseSection" class="mt-8 border-t pt-5"><h3 class="font-bold text-xl">💰 旅途记账本</h3><div class="flex gap-2 flex-wrap mt-2"><input id="expenseDesc" placeholder="消费项目" class="border p-2 rounded"><input id="expenseAmount" type="number" placeholder="金额" class="border p-2 w-28"><select id="expenseCategory" class="border p-2 rounded"><option>交通</option><option>住宿</option><option>餐饮</option><option>门票</option></select><button onclick="addExpense()" class="bg-green-600 text-white px-4 rounded-full">➕ 添加</button></div><div id="expenseListProfile" class="mt-4 max-h-64 overflow-auto"></div></div>
+                <div class="mt-8 border-t pt-5"><h3 class="font-bold text-xl">🗳️ 同行投票站</h3><button onclick="createVote()" class="bg-purple-600 text-white px-5 py-1 rounded-full mb-2">➕ 创建新投票</button><div id="voteListProfile" class="space-y-3"></div></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-gray-900 text-white/80 py-8 text-center text-sm mt-12"><div class="container">© 2026 智游AI · 让每一次出发都成为故事</div></footer>
+
+<button id="backTop" class="fixed bottom-8 right-8 bg-blue-500 text-white w-10 h-10 rounded-full hidden shadow-lg"><i class="fa-solid fa-arrow-up"></i></button>
+
+<!-- 登录弹窗 -->
+<div id="loginModal" class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm hidden items-center justify-center" style="display:none;">
+    <div class="bg-white dark:bg-gray-800 max-w-md w-full p-6 rounded-2xl shadow-2xl">
+        <div class="flex justify-between"><h2 class="font-title text-2xl">✈️ 智游AI·登舱</h2><button onclick="closeLoginModal()">✖️</button></div>
+        <div class="flex gap-4 mt-3">
+            <button id="loginTabBtn" class="flex-1 py-2 bg-blue-500 text-white rounded-full cursor-pointer" onclick="switchAuthTab('login')">登录</button>
+            <button id="registerTabBtn" class="flex-1 py-2 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer" onclick="switchAuthTab('register')">注册</button>
+        </div>
+        <div id="loginPane">
+            <input id="loginAccount" placeholder="账号" class="w-full border p-2 mt-4 rounded">
+            <input id="loginPassword" type="password" placeholder="密码" class="w-full border p-2 mt-2 rounded">
+            <div class="flex justify-between mt-2"><label><input type="checkbox" id="rememberMe"> 记住我</label><button onclick="showForgetPassword()" class="text-primary text-sm">忘记密码?</button></div>
+            <button onclick="handleLogin()" class="w-full bg-amber-800 text-white py-2 rounded-full mt-4 cursor-pointer">盖章登录</button>
+        </div>
+        <div id="registerPane" class="hidden">
+            <input id="regNickname" placeholder="昵称" class="w-full border p-2 mt-2 rounded">
+            <input id="regAccount" placeholder="账号" class="w-full border p-2 mt-2 rounded">
+            <input id="regPassword" type="password" placeholder="密码" class="w-full border p-2 mt-2 rounded">
+            <input id="regConfirmPassword" type="password" placeholder="确认密码" class="w-full border p-2 mt-2 rounded">
+            <div class="mt-2"><p class="text-sm">出行偏好（可多选）</p><div class="flex flex-wrap gap-2"><label><input type="checkbox" class="pref-reg" value="美食">美食</label><label><input type="checkbox" class="pref-reg" value="历史">历史</label><label><input type="checkbox" class="pref-reg" value="自然">自然</label><label><input type="checkbox" class="pref-reg" value="摄影">摄影</label></div></div>
+            <button onclick="handleRegister()" class="w-full bg-amber-800 text-white py-2 rounded-full mt-4 cursor-pointer">注册新旅人</button>
+        </div>
+        <button onclick="enterAsGuest()" class="w-full mt-3 border-dashed border py-2 text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">游客体验</button>
+    </div>
+</div>
+
+<script>
+    // =============================================
+    // API 配置与服务层
+    // =============================================
+    const API_CONFIG = {
+        BASE_URL: '', // 后端API基础地址，如: 'https://api.zhiyou.ai/v1'
+        TIMEOUT: 30000,
+        USE_MOCK: true, // 是否使用模拟数据（开发阶段设为true）
+        TOKEN_KEY: 'zhiyou_token',
+        API_KEY_STORAGE: 'zhiyou_openai_key'
+    };
+
+    const ApiService = {
+        token: localStorage.getItem(API_CONFIG.TOKEN_KEY) || null,
+        apiKey: localStorage.getItem(API_CONFIG.API_KEY_STORAGE) || null,
+
+        setToken(token) {
+            this.token = token;
+            if (token) localStorage.setItem(API_CONFIG.TOKEN_KEY, token);
+            else localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+        },
+
+        setApiKey(key) {
+            this.apiKey = key;
+            if (key) localStorage.setItem(API_CONFIG.API_KEY_STORAGE, key);
+            else localStorage.removeItem(API_CONFIG.API_KEY_STORAGE);
+        },
+
+        async request(endpoint, options = {}) {
+            if (API_CONFIG.USE_MOCK) {
+                return this.handleMockRequest(endpoint, options);
+            }
+
+            const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (this.token) {
+                headers['Authorization'] = `Bearer ${this.token}`;
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ message: '请求失败' }));
+                    throw new Error(error.message || `HTTP ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('请求超时');
+                }
+                throw error;
+            }
+        },
+
+        async handleMockRequest(endpoint, options) {
+            await new Promise(r => setTimeout(r, 500 + Math.random() * 500));
+            return { success: true, data: null, message: 'Mock响应' };
+        },
+
+        get(endpoint) { return this.request(endpoint, { method: 'GET' }); },
+        post(endpoint, data) { return this.request(endpoint, { method: 'POST', body: JSON.stringify(data) }); },
+        put(endpoint, data) { return this.request(endpoint, { method: 'PUT', body: JSON.stringify(data) }); },
+        delete(endpoint) { return this.request(endpoint, { method: 'DELETE' }); }
+    };
+
+    // =============================================
+    // 状态管理 Store
+    // =============================================
+    const Store = {
+        state: {
+            currentUser: null,
+            isGuest: false,
+            currentPlan: null,
+            trips: [],
+            expenses: [],
+            votes: [],
+            handbooks: [],
+            stories: [],
+            spots: [],
+            rankings: [],
+            isLoading: false,
+            notifications: []
+        },
+
+        listeners: [],
+
+        subscribe(fn) {
+            this.listeners.push(fn);
+            return () => { this.listeners = this.listeners.filter(l => l !== fn); };
+        },
+
+        notify() {
+            this.listeners.forEach(fn => fn(this.state));
+        },
+
+        setState(updates) {
+            this.state = { ...this.state, ...updates };
+            this.notify();
+        },
+
+        addNotification(message, type = 'info') {
+            const id = Date.now();
+            this.state.notifications.push({ id, message, type });
+            this.notify();
+            setTimeout(() => this.removeNotification(id), 3000);
+        },
+
+        removeNotification(id) {
+            this.state.notifications = this.state.notifications.filter(n => n.id !== id);
+            this.notify();
+        }
+    };
+
+    // =============================================
+    // 通知组件
+    // =============================================
+    const NotificationManager = {
+        container: null,
+
+        init() {
+            this.container = document.createElement('div');
+            this.container.id = 'notification-container';
+            this.container.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+            document.body.appendChild(this.container);
+        },
+
+        show(message, type = 'info') {
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-slide-in`;
+            notification.innerHTML = `<i class="fa-solid ${icons[type]}"></i><span>${message}</span>`;
+            this.container.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    };
+
+    // =============================================
+    // 加载状态管理
+    // =============================================
+    const LoadingManager = {
+        overlay: null,
+        textElement: null,
+
+        init() {
+            this.overlay = document.createElement('div');
+            this.overlay.id = 'loading-overlay';
+            this.overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden items-center justify-center';
+            this.overlay.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p id="loading-text" class="text-gray-700 dark:text-gray-200">加载中...</p>
+                </div>
+            `;
+            document.body.appendChild(this.overlay);
+            this.textElement = document.getElementById('loading-text');
+        },
+
+        show(text = '加载中...') {
+            if (this.textElement) this.textElement.textContent = text;
+            this.overlay.classList.remove('hidden');
+            this.overlay.classList.add('flex');
+        },
+
+        hide() {
+            this.overlay.classList.add('hidden');
+            this.overlay.classList.remove('flex');
+        }
+    };
+
+    // =============================================
+    // 用户认证 API
+    // =============================================
+    const AuthAPI = {
+        async login(account, password, rememberMe = false) {
+            if (API_CONFIG.USE_MOCK) {
+                const users = JSON.parse(localStorage.getItem('zhiyou_users') || '[]');
+                const user = users.find(u => u.account === account && u.password === password);
+                if (user) {
+                    const token = `mock_token_${Date.now()}`;
+                    ApiService.setToken(token);
+                    if (rememberMe) {
+                        localStorage.setItem('zhiyou_remember', JSON.stringify({ account, password }));
+                    } else {
+                        localStorage.removeItem('zhiyou_remember');
+                    }
+                    return { success: true, data: user };
+                }
+                return { success: false, message: '账号或密码错误' };
+            }
+            return ApiService.post('/auth/login', { account, password, rememberMe });
+        },
+
+        async register(data) {
+            if (API_CONFIG.USE_MOCK) {
+                const users = JSON.parse(localStorage.getItem('zhiyou_users') || '[]');
+                if (users.find(u => u.account === data.account)) {
+                    return { success: false, message: '账号已存在' };
+                }
+                const newUser = {
+                    id: Date.now(),
+                    account: data.account,
+                    password: data.password,
+                    nickname: data.nickname,
+                    preferences: data.preferences || [],
+                    avatar: null,
+                    createdAt: new Date().toISOString()
+                };
+                users.push(newUser);
+                localStorage.setItem('zhiyou_users', JSON.stringify(users));
+                return { success: true, message: '注册成功' };
+            }
+            return ApiService.post('/auth/register', data);
+        },
+
+        async logout() {
+            if (API_CONFIG.USE_MOCK) {
+                ApiService.setToken(null);
+                localStorage.removeItem('zhiyou_current_user');
+                return { success: true };
+            }
+            const result = await ApiService.post('/auth/logout');
+            ApiService.setToken(null);
+            return result;
+        },
+
+        async getProfile() {
+            if (API_CONFIG.USE_MOCK) {
+                const account = localStorage.getItem('zhiyou_current_user');
+                const users = JSON.parse(localStorage.getItem('zhiyou_users') || '[]');
+                const user = users.find(u => u.account === account);
+                return { success: !!user, data: user || null };
+            }
+            return ApiService.get('/auth/profile');
+        },
+
+        async updateProfile(data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = localStorage.getItem('zhiyou_current_user');
+                const users = JSON.parse(localStorage.getItem('zhiyou_users') || '[]');
+                const idx = users.findIndex(u => u.account === account);
+                if (idx >= 0) {
+                    users[idx] = { ...users[idx], ...data };
+                    localStorage.setItem('zhiyou_users', JSON.stringify(users));
+                    return { success: true, data: users[idx] };
+                }
+                return { success: false, message: '用户不存在' };
+            }
+            return ApiService.put('/auth/profile', data);
+        },
+
+        async forgotPassword(email) {
+            if (API_CONFIG.USE_MOCK) {
+                return { success: true, message: '重置邮件已发送（模拟）' };
+            }
+            return ApiService.post('/auth/forgot-password', { email });
+        }
+    };
+
+    // =============================================
+    // 行程规划 API
+    // =============================================
+    const TripAPI = {
+        async generatePlan(params) {
+            if (API_CONFIG.USE_MOCK) {
+                const { city, days, budget, preferences } = params;
+                const cityData = spotsData.find(c => c.city === city) || spotsData[0];
+                return {
+                    success: true,
+                    data: {
+                        id: `plan_${Date.now()}`,
+                        city,
+                        days,
+                        budget,
+                        preferences,
+                        coords: cityData.coords,
+                        plan: Array.from({ length: days }, (_, i) => ({
+                            day: i + 1,
+                            title: `第${i + 1}天 漫步${city}`,
+                            spots: cityData.spots.map(s => s.name),
+                            activities: ['上午游览景点', '下午品尝美食', '傍晚欣赏日落'],
+                            food: '地道小吃',
+                            tip: '轻装出行，带好防晒'
+                        })),
+                        hotels: [{ name: `${city}雅居民宿`, price: 280, rating: 4.8 }],
+                        estimatedCost: days * 500
+                    }
+                };
+            }
+            return ApiService.post('/ai/generate-plan', params);
+        },
+
+        async savePlan(planData) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_trips_${account}`;
+                const trips = JSON.parse(localStorage.getItem(key) || '[]');
+                const newTrip = { ...planData, id: Date.now(), savedAt: new Date().toISOString() };
+                trips.push(newTrip);
+                localStorage.setItem(key, JSON.stringify(trips));
+                return { success: true, data: newTrip };
+            }
+            return ApiService.post('/trips', planData);
+        },
+
+        async getTrips() {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, data: [] };
+                const trips = JSON.parse(localStorage.getItem(`zhiyou_trips_${account}`) || '[]');
+                return { success: true, data: trips };
+            }
+            return ApiService.get('/trips');
+        },
+
+        async getTrip(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const trips = await this.getTrips();
+                const trip = trips.data?.find(t => t.id === id);
+                return { success: !!trip, data: trip };
+            }
+            return ApiService.get(`/trips/${id}`);
+        },
+
+        async deleteTrip(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_trips_${account}`;
+                let trips = JSON.parse(localStorage.getItem(key) || '[]');
+                trips = trips.filter(t => t.id !== id);
+                localStorage.setItem(key, JSON.stringify(trips));
+                return { success: true };
+            }
+            return ApiService.delete(`/trips/${id}`);
+        },
+
+        async updateTrip(id, data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_trips_${account}`;
+                let trips = JSON.parse(localStorage.getItem(key) || '[]');
+                const idx = trips.findIndex(t => t.id === id);
+                if (idx >= 0) {
+                    trips[idx] = { ...trips[idx], ...data };
+                    localStorage.setItem(key, JSON.stringify(trips));
+                    return { success: true, data: trips[idx] };
+                }
+                return { success: false, message: '行程不存在' };
+            }
+            return ApiService.put(`/trips/${id}`, data);
+        }
+    };
+
+    // =============================================
+    // AI 助手 API
+    // =============================================
+    const AIAPI = {
+        async getTraffic(from, to) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        train: { duration: '4小时', price: 200, schedule: '多班次' },
+                        flight: { duration: '1.5小时', price: 600, schedule: '每日10班' },
+                        recommendation: '建议高铁出行，性价比更高'
+                    }
+                };
+            }
+            return ApiService.post('/ai/traffic', { from, to });
+        },
+
+        async getHotels(city, budget) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: [
+                        { name: '山景民宿', price: budget || 400, rating: 4.8, location: '市中心', amenities: ['WiFi', '早餐', '停车'] },
+                        { name: '湖畔酒店', price: (budget || 400) + 100, rating: 4.6, location: '景区附近', amenities: ['WiFi', '泳池', '健身房'] },
+                        { name: '青年旅舍', price: (budget || 400) - 200, rating: 4.5, location: '老城区', amenities: ['WiFi', '厨房'] }
+                    ]
+                };
+            }
+            return ApiService.post('/ai/hotels', { city, budget });
+        },
+
+        async getWeather(city) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        city,
+                        current: { temp: 24, condition: '晴', humidity: 60 },
+                        forecast: [
+                            { date: '今天', high: 28, low: 20, condition: '晴' },
+                            { date: '明天', high: 26, low: 19, condition: '多云' },
+                            { date: '后天', high: 25, low: 18, condition: '小雨' }
+                        ],
+                        suggestion: '适合出游，建议带件薄外套'
+                    }
+                };
+            }
+            return ApiService.post('/ai/weather', { city });
+        },
+
+        async getBudgetAllocation(totalBudget) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        transport: { percent: 30, amount: totalBudget * 0.3, items: ['机票/火车票', '市内交通'] },
+                        accommodation: { percent: 40, amount: totalBudget * 0.4, items: ['酒店', '民宿'] },
+                        food: { percent: 20, amount: totalBudget * 0.2, items: ['餐饮', '小吃'] },
+                        tickets: { percent: 10, amount: totalBudget * 0.1, items: ['门票', '娱乐'] }
+                    }
+                };
+            }
+            return ApiService.post('/ai/budget', { totalBudget });
+        },
+
+        async getWarnings(city) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        warnings: [
+                            { type: 'crowd', message: '热门景点建议早8点前入场', level: 'warning' },
+                            { type: 'booking', message: '需提前3天预约门票', level: 'info' },
+                            { type: 'weather', message: '雨季记得带伞', level: 'info' }
+                        ]
+                    }
+                };
+            }
+            return ApiService.post('/ai/warnings', { city });
+        },
+
+        async getCultureTips(city) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        tips: [
+                            '尊重当地风俗，寺庙衣着整洁',
+                            '勿大声喧哗，保持安静',
+                            '拍照前先征得同意',
+                            '品尝当地美食，支持小店'
+                        ]
+                    }
+                };
+            }
+            return ApiService.post('/ai/culture', { city });
+        },
+
+        async askQuestion(question, context = {}) {
+            if (API_CONFIG.USE_MOCK) {
+                const answers = {
+                    default: '建议品尝本地小吃街，傍晚去江边散步更惬意',
+                    美食: '推荐尝试当地特色菜，可以问问当地人哪里好吃',
+                    住宿: '建议选择交通便利的区域，提前预订更便宜',
+                    交通: '可以使用打车软件，也可以体验当地公交'
+                };
+                const key = Object.keys(answers).find(k => question.includes(k)) || 'default';
+                return { success: true, data: { answer: answers[key] } };
+            }
+            return ApiService.post('/ai/qa', { question, context });
+        },
+
+        async generateLuggageList(destination, days) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        essentials: ['身份证', '手机', '充电宝', '现金', '银行卡'],
+                        clothing: Array(days).fill(0).map((_, i) => `换洗衣物${i + 1}`),
+                        toiletries: ['牙刷', '牙膏', '毛巾', '护肤品', '防晒霜'],
+                        electronics: ['充电器', '耳机', '相机'],
+                        medicine: ['常用药', '创可贴', '肠胃药'],
+                        others: ['雨伞', '水杯', '零食']
+                    }
+                };
+            }
+            return ApiService.post('/ai/luggage', { destination, days });
+        },
+
+        async voiceToText(audioBlob) {
+            if (API_CONFIG.USE_MOCK) {
+                return { success: true, data: { text: '我想去三亚玩5天' } };
+            }
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+            return ApiService.request('/ai/voice-to-text', {
+                method: 'POST',
+                body: formData,
+                headers: {}
+            });
+        },
+
+        async exportChecklist(planId) {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: {
+                        url: '#',
+                        content: '行程清单已生成，可打印'
+                    }
+                };
+            }
+            return ApiService.get(`/trips/${planId}/checklist`);
+        }
+    };
+
+    // =============================================
+    // 手账 API
+    // =============================================
+    const HandbookAPI = {
+        async uploadPhoto(file) {
+            if (API_CONFIG.USE_MOCK) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve({ success: true, data: { url: e.target.result, id: Date.now() } });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            const formData = new FormData();
+            formData.append('photo', file);
+            return ApiService.request('/handbooks/photos', {
+                method: 'POST',
+                body: formData,
+                headers: {}
+            });
+        },
+
+        async create(data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_handbooks_${account}`;
+                const handbooks = JSON.parse(localStorage.getItem(key) || '[]');
+                const newHandbook = {
+                    id: Date.now(),
+                    ...data,
+                    createdAt: new Date().toISOString()
+                };
+                handbooks.push(newHandbook);
+                localStorage.setItem(key, JSON.stringify(handbooks));
+                return { success: true, data: newHandbook };
+            }
+            return ApiService.post('/handbooks', data);
+        },
+
+        async getAll() {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: true, data: [] };
+                const handbooks = JSON.parse(localStorage.getItem(`zhiyou_handbooks_${account}`) || '[]');
+                return { success: true, data: handbooks };
+            }
+            return ApiService.get('/handbooks');
+        },
+
+        async get(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const result = await this.getAll();
+                const handbook = result.data?.find(h => h.id === id);
+                return { success: !!handbook, data: handbook };
+            }
+            return ApiService.get(`/handbooks/${id}`);
+        },
+
+        async update(id, data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_handbooks_${account}`;
+                let handbooks = JSON.parse(localStorage.getItem(key) || '[]');
+                const idx = handbooks.findIndex(h => h.id === id);
+                if (idx >= 0) {
+                    handbooks[idx] = { ...handbooks[idx], ...data, updatedAt: new Date().toISOString() };
+                    localStorage.setItem(key, JSON.stringify(handbooks));
+                    return { success: true, data: handbooks[idx] };
+                }
+                return { success: false, message: '手账不存在' };
+            }
+            return ApiService.put(`/handbooks/${id}`, data);
+        },
+
+        async delete(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_handbooks_${account}`;
+                let handbooks = JSON.parse(localStorage.getItem(key) || '[]');
+                handbooks = handbooks.filter(h => h.id !== id);
+                localStorage.setItem(key, JSON.stringify(handbooks));
+                return { success: true };
+            }
+            return ApiService.delete(`/handbooks/${id}`);
+        }
+    };
+
+    // =============================================
+    // 记账 API
+    // =============================================
+    const ExpenseAPI = {
+        async add(data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_expenses_${account}`;
+                const expenses = JSON.parse(localStorage.getItem(key) || '[]');
+                const newExpense = {
+                    id: Date.now(),
+                    ...data,
+                    createdAt: new Date().toISOString()
+                };
+                expenses.push(newExpense);
+                localStorage.setItem(key, JSON.stringify(expenses));
+                return { success: true, data: newExpense };
+            }
+            return ApiService.post('/expenses', data);
+        },
+
+        async getAll(tripId = null) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: true, data: [] };
+                let expenses = JSON.parse(localStorage.getItem(`zhiyou_expenses_${account}`) || '[]');
+                if (tripId) {
+                    expenses = expenses.filter(e => e.tripId === tripId);
+                }
+                return { success: true, data: expenses };
+            }
+            return ApiService.get(tripId ? `/expenses?tripId=${tripId}` : '/expenses');
+        },
+
+        async update(id, data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_expenses_${account}`;
+                let expenses = JSON.parse(localStorage.getItem(key) || '[]');
+                const idx = expenses.findIndex(e => e.id === id);
+                if (idx >= 0) {
+                    expenses[idx] = { ...expenses[idx], ...data };
+                    localStorage.setItem(key, JSON.stringify(expenses));
+                    return { success: true, data: expenses[idx] };
+                }
+                return { success: false, message: '记录不存在' };
+            }
+            return ApiService.put(`/expenses/${id}`, data);
+        },
+
+        async delete(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_expenses_${account}`;
+                let expenses = JSON.parse(localStorage.getItem(key) || '[]');
+                expenses = expenses.filter(e => e.id !== id);
+                localStorage.setItem(key, JSON.stringify(expenses));
+                return { success: true };
+            }
+            return ApiService.delete(`/expenses/${id}`);
+        },
+
+        async getSummary(tripId = null) {
+            if (API_CONFIG.USE_MOCK) {
+                const result = await this.getAll(tripId);
+                const expenses = result.data || [];
+                const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+                const byCategory = {};
+                expenses.forEach(e => {
+                    byCategory[e.category] = (byCategory[e.category] || 0) + (e.amount || 0);
+                });
+                return { success: true, data: { total, byCategory, count: expenses.length } };
+            }
+            return ApiService.get(tripId ? `/expenses/summary?tripId=${tripId}` : '/expenses/summary');
+        }
+    };
+
+    // =============================================
+    // 投票 API
+    // =============================================
+    const VoteAPI = {
+        async create(data) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_votes_${account}`;
+                const votes = JSON.parse(localStorage.getItem(key) || '[]');
+                const newVote = {
+                    id: Date.now(),
+                    ...data,
+                    options: data.options.map(o => ({ text: o, count: 0 })),
+                    createdAt: new Date().toISOString(),
+                    createdBy: account
+                };
+                votes.push(newVote);
+                localStorage.setItem(key, JSON.stringify(votes));
+                return { success: true, data: newVote };
+            }
+            return ApiService.post('/votes', data);
+        },
+
+        async getAll() {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: true, data: [] };
+                const votes = JSON.parse(localStorage.getItem(`zhiyou_votes_${account}`) || '[]');
+                return { success: true, data: votes };
+            }
+            return ApiService.get('/votes');
+        },
+
+        async vote(voteId, optionIndex) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_votes_${account}`;
+                let votes = JSON.parse(localStorage.getItem(key) || '[]');
+                const vote = votes.find(v => v.id === voteId);
+                if (vote && vote.options[optionIndex]) {
+                    vote.options[optionIndex].count++;
+                    localStorage.setItem(key, JSON.stringify(votes));
+                    return { success: true, data: vote };
+                }
+                return { success: false, message: '投票不存在' };
+            }
+            return ApiService.post(`/votes/${voteId}/vote`, { optionIndex });
+        },
+
+        async delete(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const account = Store.state.currentUser?.account;
+                if (!account) return { success: false, message: '请先登录' };
+                const key = `zhiyou_votes_${account}`;
+                let votes = JSON.parse(localStorage.getItem(key) || '[]');
+                votes = votes.filter(v => v.id !== id);
+                localStorage.setItem(key, JSON.stringify(votes));
+                return { success: true };
+            }
+            return ApiService.delete(`/votes/${id}`);
+        }
+    };
+
+    // =============================================
+    // 故事与景点 API
+    // =============================================
+    const ContentAPI = {
+        async getStories(params = {}) {
+            if (API_CONFIG.USE_MOCK) {
+                return { success: true, data: storiesData };
+            }
+            const query = new URLSearchParams(params).toString();
+            return ApiService.get(`/stories${query ? '?' + query : ''}`);
+        },
+
+        async getStory(id) {
+            if (API_CONFIG.USE_MOCK) {
+                const story = storiesData.find(s => s.id === id);
+                return { success: !!story, data: story };
+            }
+            return ApiService.get(`/stories/${id}`);
+        },
+
+        async getSpots(city = null) {
+            if (API_CONFIG.USE_MOCK) {
+                const data = city ? spotsData.find(c => c.city === city) : spotsData;
+                return { success: !!data, data };
+            }
+            return ApiService.get(city ? `/spots?city=${city}` : '/spots');
+        },
+
+        async getRankings() {
+            if (API_CONFIG.USE_MOCK) {
+                return {
+                    success: true,
+                    data: [
+                        { rank: 1, city: '成都', hotspot: '熊猫基地', heat: '9.8w' },
+                        { rank: 2, city: '大理', hotspot: '洱海', heat: '8.2w' },
+                        { rank: 3, city: '厦门', hotspot: '鼓浪屿', heat: '7.5w' },
+                        { rank: 4, city: '西安', hotspot: '兵马俑', heat: '6.9w' },
+                        { rank: 5, city: '重庆', hotspot: '洪崖洞', heat: '6.2w' }
+                    ]
+                };
+            }
+            return ApiService.get('/rankings');
+        }
+    };
+
+    // =============================================
+    // 静态数据
+    // =============================================
+    const storiesData = [
+        { id: 1, title: "洱海骑行日记", author: "风一样的旅人", location: "大理", cover: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500", content: "在洱海边骑车，风里有自由的味道。", fullContent: "清晨从古城出发，租了一辆小电驴沿着环海西路骑行。天空蓝得像油画，路过喜洲古镇吃了破酥粑粑。傍晚在双廊看日落，金色的光洒在水面上，那一刻觉得人间值得。", images: ["https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800", "https://images.unsplash.com/photo-1528543606781-2f6e6857f318?w=800"], tags: ["治愈", "骑行"], coords: [100.2568, 25.6968] },
+        { id: 2, title: "稻城亚丁徒步", author: "山川可期", location: "稻城", cover: "https://images.unsplash.com/photo-1500835556837-99ac94a94552?w=500", content: "海拔4700米，牛奶海的颜色令人震撼。", fullContent: "从洛绒牛场开始徒步，一路上雪山、草甸、溪流相伴。爬到牛奶海的时候心跳加速，但那抹蒂芙尼蓝真的震撼。五色海更高，风很大，记得带氧气瓶。", images: ["https://images.unsplash.com/photo-1473186578172-c141e6798cf4?w=800", "https://images.unsplash.com/photo-1530789253388-930c80bdc8a6?w=800"], tags: ["徒步", "摄影"], coords: [100.3133, 28.5033] },
+        { id: 3, title: "京都红叶狩", author: "京都小住", location: "京都", cover: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=500", content: "红叶季的哲学之道，像走进了电影画面。", fullContent: "十一月底的京都，红叶见顷。清水寺的舞台被红叶包围，夜间参拜灯光秀梦幻。岚山竹林小径人潮汹涌，但天龙寺的庭院幽静。", images: ["https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800", "https://images.unsplash.com/photo-1551641506-ee5bf4cb45f1?w=800"], tags: ["人文", "禅意"], coords: [135.7681, 35.0116] },
+        { id: 4, title: "成都慢生活", author: "吃客不胖", location: "成都", cover: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=500", content: "茶馆、火锅、大熊猫，巴适得板！", fullContent: "成都的节奏太舒服了，人民公园鹤鸣茶社点一杯盖碗茶，掏耳朵。大熊猫基地看幼崽翻滚。晚上吃火锅，一定要点鸭肠和毛肚。", images: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800"], tags: ["美食", "休闲"], coords: [104.0657, 30.6594] },
+        { id: 5, title: "厦门文艺之旅", author: "海风日记", location: "厦门", cover: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=500", content: "鼓浪屿的小巷，沙坡尾的咖啡馆。", fullContent: "在鼓浪屿住了一晚，清晨没有游客的时候最美。日光岩俯瞰全岛，菽庄花园精巧。沙坡尾很多设计师店铺，艺术西区适合拍照。", images: ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800"], tags: ["文艺", "海岛"], coords: [118.0894, 24.4797] },
+        { id: 6, title: "西安古都寻梦", author: "长安客", location: "西安", cover: "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?w=500", content: "兵马俑震撼，不夜城璀璨。", fullContent: "兵马俑一定要请讲解，否则就是看泥人。大雁塔北广场音乐喷泉壮观。晚上大唐不夜城仿佛穿越，汉服小姐姐很多。", images: ["https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800", "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800"], tags: ["历史", "美食"], coords: [108.9398, 34.3416] },
+        { id: 7, title: "重庆魔幻8D", author: "山城棒棒", location: "重庆", cover: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=500", content: "洪崖洞像千与千寻，轻轨穿楼。", fullContent: "导航没用，问路更靠谱。洪崖洞夜景绝美，但人巨多。李子坝轻轨穿楼打卡。南山一棵树看全城。", images: ["https://images.unsplash.com/photo-1585409677983-0f6c41ca9c3b?w=800", "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=800"], tags: ["魔幻", "美食"], coords: [106.5049, 29.5331] },
+        { id: 8, title: "新疆伊犁草原", author: "牧羊人", location: "伊犁", cover: "https://images.unsplash.com/photo-1506260408121-e353d10b87c7?w=500", content: "那拉提的六月，像宫崎骏动画里的夏天。", fullContent: "伊犁的草原惊艳，那拉提空中草原，喀拉峻人体草原，琼库什台原始村落。自驾独库公路，一天经历四季。", images: ["https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=800", "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800"], tags: ["自然", "自驾"], coords: [81.2751, 43.9011] },
+        { id: 9, title: "三亚蓝色假期", author: "海浪声声", location: "三亚", cover: "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=500", content: "亚龙湾的沙细如粉，蜈支洲岛潜水绝佳。", fullContent: "亚龙湾的沙质洁白细腻，海水湛蓝。蜈支洲岛潜水能看到珊瑚和鱼群。鹿回头俯瞰三亚湾夜景，浪漫至极。", images: ["https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=800", "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800"], tags: ["海岛", "潜水"], coords: [109.5028, 18.2528] },
+        { id: 10, title: "拉萨心灵之旅", author: "朝圣者", location: "拉萨", cover: "https://images.unsplash.com/photo-1559628376-f3fe5f782a2e?w=500", content: "布达拉宫的雄伟，大昭寺的虔诚。", fullContent: "布达拉宫台阶虽高，但俯瞰全城值得。大昭寺门前磕长头的信徒让人动容。八廓街转经，甜茶馆喝甜茶，时间慢了下来。", images: ["https://images.unsplash.com/photo-1580657018950-c7f7d6a6d990?w=800", "https://images.unsplash.com/photo-1569288063643-5e5a4c5b8f0e?w=800"], tags: ["信仰", "高原"], coords: [91.1172, 29.6469] }
+    ];
+
+    const spotsData = [
+        { city: "成都", coords: [104.0657, 30.6594], spots: [
+                { name: "大熊猫繁育基地", desc: "全球顶尖的熊猫保护研究中心，可以看到幼年熊猫嬉戏、成年熊猫慵懒吃竹，早上9点前到达最活泼。", img: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400", coords: [104.1473, 30.7398] },
+                { name: "宽窄巷子", desc: "由宽巷子、窄巷子、井巷子组成的清代古街，是成都慢生活的缩影。", img: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400", coords: [104.0657, 30.6634] },
+                { name: "都江堰", desc: "两千多年历史的无坝引水水利工程，至今灌溉成都平原。", img: "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400", coords: [103.6140, 31.0064] }
+            ]},
+        { city: "大理", coords: [100.2568, 25.6968], spots: [
+                { name: "洱海", desc: "云南第二大高原淡水湖，环湖骑行约120公里。", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400", coords: [100.2568, 25.6968] },
+                { name: "大理古城", desc: "文献之邦，古城内人民路夜市热闹非凡。", img: "https://images.unsplash.com/photo-1559827291-72ee739d0d9a?w=400", coords: [100.1957, 25.6064] },
+                { name: "崇圣寺三塔", desc: "大理国时期的皇家寺院，三塔倒影公园是绝佳拍摄点。", img: "https://images.unsplash.com/photo-1580657018950-c7f7d6a6d990?w=400", coords: [100.1489, 25.7189] }
+            ]},
+        { city: "厦门", coords: [118.0894, 24.4797], spots: [
+                { name: "鼓浪屿", desc: "万国建筑博览群，日光岩顶可俯瞰全岛风貌。", img: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400", coords: [118.0652, 24.4473] },
+                { name: "环岛路", desc: "沿海而建的马拉松赛道，适合骑行或慢跑。", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400", coords: [118.1128, 24.4383] },
+                { name: "曾厝垵", desc: "从原始渔村蜕变成文艺青年聚集地。", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400", coords: [118.1038, 24.4356] }
+            ]},
+        { city: "西安", coords: [108.9398, 34.3416], spots: [
+                { name: "兵马俑", desc: "世界第八大奇迹，数千个真人大小的陶俑神态各异。", img: "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?w=400", coords: [109.2792, 34.3853] },
+                { name: "大唐不夜城", desc: "以盛唐文化为主题的不夜街区，夜晚灯光璀璨。", img: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400", coords: [108.9618, 34.2181] },
+                { name: "西安城墙", desc: "中国现存规模最大、保存最完整的古代城垣。", img: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800", coords: [108.9421, 34.2604] }
+            ]},
+        { city: "重庆", coords: [106.5049, 29.5331], spots: [
+                { name: "洪崖洞", desc: "依山而建的吊脚楼建筑群，夜晚亮灯后宛如《千与千寻》场景。", img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=400", coords: [106.5816, 29.5631] },
+                { name: "长江索道", desc: "横跨长江的空中巴士，是体验山城立体交通的经典项目。", img: "https://images.unsplash.com/photo-1585409677983-0f6c41ca9c3b?w=400", coords: [106.5856, 29.5603] },
+                { name: "磁器口古镇", desc: "千年古镇，石板路两旁遍布麻花店、陈麻花、鸡杂店。", img: "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=400", coords: [106.4464, 29.5452] }
+            ]}
+    ];
+
+    // =============================================
+    // 应用核心变量
+    // =============================================
+    let currentPlanData = null, map = null, markers = [];
+    let uploadedPhotos = [], addedStickers = [];
+
+    // =============================================
+    // 渲染函数
+    // =============================================
+    function renderHomeStories() {
+        document.getElementById('storyGridHome').innerHTML = storiesData.map(s => `
+            <div class="story-card bg-white dark:bg-gray-800 rounded-2xl shadow-md p-3" onclick="openStoryDetail(${s.id})">
+                <img src="${s.cover}" class="h-32 w-full object-cover rounded-xl">
+                <div class="mt-2"><div class="font-bold text-sm">${s.title}</div><p class="text-xs text-gray-500">${s.content.substring(0,40)}</p>
+                <div class="flex gap-1 mt-1">${s.tags.map(t=>`<span class="bg-blue-100 text-blue-800 text-xs px-1 py-0.5 rounded-full">${t}</span>`).join('')}</div></div>
+            </div>`).join('');
+    }
+
+    function renderAllStories() {
+        document.getElementById('allStoriesGrid').innerHTML = storiesData.map(s => `
+            <div class="story-card bg-white dark:bg-gray-800 rounded-2xl shadow-md overflow-hidden" onclick="openStoryDetail(${s.id})">
+                <img src="${s.cover}" class="h-56 w-full object-cover">
+                <div class="p-4"><h3 class="font-bold text-xl">${s.title}</h3><p class="text-gray-500 text-sm">${s.author} · ${s.location}</p>
+                <p class="mt-2">${s.content}</p><div class="flex gap-2 mt-3">${s.tags.map(t=>`<span class="bg-gray-200 px-2 py-1 rounded-full text-xs">${t}</span>`).join('')}</div></div>
+            </div>`).join('');
+    }
+
+    function openStoryDetail(id) {
+        let story = storiesData.find(s => s.id === id);
+        if (story) {
+            document.getElementById('storyDetailContent').innerHTML = `
+            <div class="p-6"><img src="${story.cover}" class="w-full h-80 object-cover rounded-2xl">
+                <h1 class="text-3xl font-bold mt-4">${story.title}</h1><p class="text-gray-500">${story.author} · ${story.location}</p>
+                <div class="flex gap-2 my-3">${story.tags.map(t=>`<span class="bg-blue-500/20 px-3 py-1 rounded-full">${t}</span>`).join('')}</div>
+                <p class="whitespace-pre-line">${story.fullContent}</p>
+                <div class="grid grid-cols-2 gap-3 mt-5">${story.images.map(img=>`<img src="${img}" class="rounded-xl">`).join('')}</div>
+            </div>`;
+            switchToPage('story-detail');
+        }
+    }
+
+    function goBackToStories() { switchToPage('stories'); }
+
+    function renderSpotList() {
+        document.getElementById('spotRecommendList').innerHTML = spotsData.map(city => `
+            <div class="spot-card flex items-center gap-3 border-b pb-3" onclick="openSpotDetail('${city.city}')">
+                <img src="${city.spots[0].img}" class="w-16 h-16 object-cover rounded-xl">
+                <div><div class="font-bold">${city.city}</div><p class="text-sm text-gray-500">${city.spots[0].name} · ${city.spots[1].name}</p>
+                <p class="text-xs text-gray-400 mt-1 line-clamp-2">${city.spots[0].desc.substring(0,45)}...</p></div>
+                <i class="fa-solid fa-chevron-right ml-auto text-gray-400"></i>
+            </div>`).join('');
+    }
+
+    function openSpotDetail(cityName) {
+        let cityData = spotsData.find(c => c.city === cityName);
+        if (cityData) {
+            document.getElementById('spotDetailContent').innerHTML = `<div class="p-6"><h2 class="text-3xl font-title mb-4">🏞️ ${cityData.city} 必游景点</h2>
+            <div class="grid gap-6">${cityData.spots.map(spot=>`<div class="flex gap-4 border-b pb-4"><img src="${spot.img}" class="w-32 h-32 object-cover rounded-xl"><div><h3 class="font-bold text-xl">${spot.name}</h3><p class="text-gray-600">${spot.desc}</p></div></div>`).join('')}</div></div>`;
+            switchToPage('spot-detail');
+        }
+    }
+
+    function goBack() { switchToPage('home'); }
+
+    function renderRanking() {
+        document.getElementById('cityRankingList').innerHTML = `
+            <div class="ranking-item flex justify-between"><span><span class="font-bold text-lg text-blue-500">1</span> 成都</span><span>🐼 熊猫基地</span><span>🔥9.8w</span></div>
+            <div class="ranking-item flex justify-between"><span><span class="font-bold text-lg">2</span> 大理</span><span>🌊 洱海</span><span>🔥8.2w</span></div>
+            <div class="ranking-item flex justify-between"><span><span class="font-bold text-lg">3</span> 厦门</span><span>🏖️ 鼓浪屿</span><span>🔥7.5w</span></div>
+            <div class="ranking-item flex justify-between"><span><span class="font-bold text-lg">4</span> 西安</span><span>🏯 兵马俑</span><span>🔥6.9w</span></div>
+            <div class="ranking-item flex justify-between"><span><span class="font-bold text-lg">5</span> 重庆</span><span>🌉 洪崖洞</span><span>🔥6.2w</span></div>`;
+    }
+
+    // =============================================
+    // 页面切换
+    // =============================================
+    function switchToPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById(`page-${pageId}`).classList.add('active-page');
+        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active-nav'));
+        document.querySelector(`[data-page="${pageId}"]`)?.classList.add('active-nav');
+        if (pageId === 'profile') { loadProfileTrips(); renderExpensesList(); renderVotes(); }
+        if (pageId === 'handbook') resetHandbookEditor();
+        if (pageId === 'stories') renderAllStories();
+        if (pageId === 'aiplanner' && document.querySelector('[data-aitab="map"].active')) setTimeout(refreshMap, 200);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.switchToPage = switchToPage;
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => { e.preventDefault(); let page = link.dataset.page; if (page) switchToPage(page); });
+    });
+
+    // =============================================
+    // AI规划师功能（对接API）
+    // =============================================
+    async function generatePlanWithAI() {
+        const city = document.getElementById('cityInput').value || '成都';
+        const days = parseInt(document.getElementById('dayRange').value);
+        const budget = document.getElementById('budgetSel').value;
+        const preferences = Array.from(document.querySelectorAll('.pref-check:checked')).map(cb => cb.value);
+
+        LoadingManager.show('AI正在规划行程...');
+        document.getElementById('loadProcess').classList.remove('hidden');
+
+        try {
+            const result = await TripAPI.generatePlan({ city, days, budget, preferences });
+            if (result.success) {
+                currentPlanData = result.data;
+                renderPlanBook(currentPlanData);
+                NotificationManager.show('行程规划完成！', 'success');
+            } else {
+                NotificationManager.show(result.message || '规划失败', 'error');
+            }
+        } catch (error) {
+            NotificationManager.show('网络错误，请重试', 'error');
+        } finally {
+            LoadingManager.hide();
+            document.getElementById('loadProcess').classList.add('hidden');
+        }
+    }
+
+    function renderPlanBook(d) {
+        let html = `<h3 class="font-bold text-lg">📖 ${d.city} ${d.days}日游</h3>
+            <div class="mt-3"><button onclick="saveCurrentPlan()" class="bg-green-500 text-white px-4 py-1 rounded-full text-sm mb-3">💾 保存行程</button></div>`;
+        d.plan.forEach(p => {
+            html += `<div class="mt-3 border p-2 rounded"><b>Day${p.day}</b> ${p.spots.join(' → ')}<div>🍜 ${p.food}</div><div class="text-xs text-gray-400">💡 ${p.tip}</div></div>`;
+        });
+        if (d.hotels) {
+            html += `<div class="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded"><b>🏨 推荐住宿</b>${d.hotels.map(h => `<div>${h.name} - ¥${h.price}/晚</div>`).join('')}</div>`;
+        }
+        document.getElementById('planPreview').innerHTML = html;
+    }
+
+    async function saveCurrentPlan() {
+        if (!currentPlanData) {
+            NotificationManager.show('请先生成行程', 'warning');
+            return;
+        }
+        if (!Store.state.currentUser) {
+            openLoginModal();
+            return;
+        }
+        const result = await TripAPI.savePlan(currentPlanData);
+        if (result.success) {
+            NotificationManager.show('行程已保存', 'success');
+            loadProfileTrips();
+        } else {
+            NotificationManager.show(result.message || '保存失败', 'error');
+        }
+    }
+
+    async function getTrafficAI() {
+        const from = document.getElementById('fromCity').value;
+        const to = document.getElementById('toCity').value;
+        if (!from || !to) {
+            NotificationManager.show('请输入出发和到达城市', 'warning');
+            return;
+        }
+        LoadingManager.show('查询交通方案...');
+        const result = await AIAPI.getTraffic(from, to);
+        LoadingManager.hide();
+        if (result.success) {
+            const d = result.data;
+            document.getElementById('trafficResult').innerHTML = `
+                <div class="space-y-2">
+                    <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded"><b>🚄 高铁</b> ${d.train.duration} · ¥${d.train.price}</div>
+                    <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded"><b>✈️ 飞机</b> ${d.flight.duration} · ¥${d.flight.price}</div>
+                    <div class="text-sm text-gray-500 mt-2">💡 ${d.recommendation}</div>
+                </div>`;
+        }
+    }
+
+    async function getHotelAI() {
+        const city = document.getElementById('hotelCity').value;
+        const budget = parseInt(document.getElementById('hotelBudget').value) || 400;
+        if (!city) {
+            NotificationManager.show('请输入城市', 'warning');
+            return;
+        }
+        LoadingManager.show('智能匹配酒店...');
+        const result = await AIAPI.getHotels(city, budget);
+        LoadingManager.hide();
+        if (result.success) {
+            document.getElementById('hotelResult').innerHTML = result.data.map(h => `
+                <div class="p-2 border rounded mt-1">
+                    <b>${h.name}</b> <span class="text-yellow-500">★${h.rating}</span>
+                    <div class="text-sm">¥${h.price}/晚 · ${h.location}</div>
+                </div>`).join('');
+        }
+    }
+
+    async function getWeatherAI() {
+        const city = document.getElementById('weatherCity').value;
+        if (!city) {
+            NotificationManager.show('请输入目的地', 'warning');
+            return;
+        }
+        LoadingManager.show('查询天气...');
+        const result = await AIAPI.getWeather(city);
+        LoadingManager.hide();
+        if (result.success) {
+            const d = result.data;
+            document.getElementById('weatherResult').innerHTML = `
+                <div class="p-2 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900 dark:to-cyan-900 rounded">
+                    <div class="text-2xl">${d.current.temp}°C ${d.current.condition}</div>
+                    <div class="text-sm mt-2">${d.forecast.map(f => `<span class="mr-2">${f.date}: ${f.high}°/${f.low}°</span>`).join('')}</div>
+                    <div class="text-xs text-gray-500 mt-1">💡 ${d.suggestion}</div>
+                </div>`;
+        }
+    }
+
+    async function exportChecklist() {
+        if (!currentPlanData) {
+            NotificationManager.show('请先生成行程', 'warning');
+            return;
+        }
+        LoadingManager.show('生成清单...');
+        const result = await AIAPI.exportChecklist(currentPlanData.id);
+        LoadingManager.hide();
+        if (result.success) {
+            document.getElementById('checklistPreview').innerHTML = `<pre class="text-xs bg-gray-100 p-2 rounded">${result.data.content}</pre>`;
+            NotificationManager.show('清单已生成', 'success');
+        }
+    }
+
+    async function autoBudgetAI() {
+        const total = parseInt(document.getElementById('totalBudget').value);
+        if (!total || total <= 0) {
+            NotificationManager.show('请输入有效预算', 'warning');
+            return;
+        }
+        LoadingManager.show('智能分配预算...');
+        const result = await AIAPI.getBudgetAllocation(total);
+        LoadingManager.hide();
+        if (result.success) {
+            const d = result.data;
+            document.getElementById('budgetSplit').innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between"><span>🚗 交通</span><span>¥${d.transport.amount} (${d.transport.percent}%)</span></div>
+                    <div class="flex justify-between"><span>🏨 住宿</span><span>¥${d.accommodation.amount} (${d.accommodation.percent}%)</span></div>
+                    <div class="flex justify-between"><span>🍜 餐饮</span><span>¥${d.food.amount} (${d.food.percent}%)</span></div>
+                    <div class="flex justify-between"><span>🎫 门票</span><span>¥${d.tickets.amount} (${d.tickets.percent}%)</span></div>
+                </div>`;
+        }
+    }
+
+    async function getWarnings() {
+        const city = document.getElementById('cityInput').value || '成都';
+        LoadingManager.show('获取避坑预警...');
+        const result = await AIAPI.getWarnings(city);
+        LoadingManager.hide();
+        if (result.success) {
+            document.getElementById('warningBox').innerHTML = result.data.warnings.map(w =>
+                `<div class="p-2 ${w.level === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-blue-50 dark:bg-blue-900/20'} rounded mb-1">⚠️ ${w.message}</div>`
+            ).join('');
+        }
+    }
+
+    async function getCultureTips() {
+        const city = document.getElementById('cultureCity').value;
+        if (!city) {
+            NotificationManager.show('请输入城市', 'warning');
+            return;
+        }
+        LoadingManager.show('获取风俗提醒...');
+        const result = await AIAPI.getCultureTips(city);
+        LoadingManager.hide();
+        if (result.success) {
+            document.getElementById('cultureResult').innerHTML = `<ul class="list-disc pl-4">${result.data.tips.map(t => `<li>${t}</li>`).join('')}</ul>`;
+        }
+    }
+
+    async function askTravelQA() {
+        const question = document.getElementById('qaQuestion').value;
+        if (!question) {
+            NotificationManager.show('请输入问题', 'warning');
+            return;
+        }
+        LoadingManager.show('AI思考中...');
+        const result = await AIAPI.askQuestion(question);
+        LoadingManager.hide();
+        if (result.success) {
+            document.getElementById('qaAnswer').innerHTML = `<div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">🧠 ${result.data.answer}</div>`;
+        }
+    }
+
+    async function generateLuggageList() {
+        const destination = document.getElementById('luggageCity').value;
+        const days = parseInt(document.getElementById('luggageDays').value) || 5;
+        if (!destination) {
+            NotificationManager.show('请输入目的地', 'warning');
+            return;
+        }
+        LoadingManager.show('生成行李清单...');
+        const result = await AIAPI.generateLuggageList(destination, days);
+        LoadingManager.hide();
+        if (result.success) {
+            const d = result.data;
+            document.getElementById('luggageResult').innerHTML = `
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-2 bg-red-50 dark:bg-red-900/20 rounded"><b>📋 必备</b>${d.essentials.map(i => `<div>• ${i}</div>`).join('')}</div>
+                    <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded"><b>👕 衣物</b>${d.clothing.slice(0,5).map(i => `<div>• ${i}</div>`).join('')}</div>
+                    <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded"><b>🧴 洗漱</b>${d.toiletries.map(i => `<div>• ${i}</div>`).join('')}</div>
+                    <div class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded"><b>💊 药品</b>${d.medicine.map(i => `<div>• ${i}</div>`).join('')}</div>
+                </div>`;
+        }
+    }
+
+    async function startVoiceRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById('voiceText').innerText = text;
+                NotificationManager.show('语音识别成功', 'success');
+            };
+            recognition.onerror = () => {
+                document.getElementById('voiceText').innerText = '识别失败，请重试';
+            };
+            recognition.start();
+            NotificationManager.show('请开始说话...', 'info');
+        } else {
+            document.getElementById('voiceText').innerText = '我想去三亚5天';
+            NotificationManager.show('浏览器不支持语音识别，使用模拟数据', 'warning');
+        }
+    }
+
+    function processVoiceCommand() {
+        const text = document.getElementById('voiceText').innerText;
+        const cityMatch = text.match(/去(.+?)[玩游天]/);
+        const daysMatch = text.match(/(\d+)\s*天/);
+        if (cityMatch) {
+            document.getElementById('cityInput').value = cityMatch[1];
+        }
+        if (daysMatch) {
+            document.getElementById('dayRange').value = daysMatch[1];
+            document.getElementById('dayNum').innerText = daysMatch[1];
+        }
+        generatePlanWithAI();
+        switchToPage('aiplanner');
+        document.querySelector('[data-aitab="basic"]').click();
+    }
+
+    function toggleApiKeyInput() {
+        document.getElementById('apiKeyBox').classList.toggle('hidden');
+    }
+
+    function saveApiKey() {
+        const key = document.getElementById('apiKeyInput').value;
+        if (key) {
+            ApiService.setApiKey(key);
+            NotificationManager.show('API Key已保存', 'success');
+        }
+    }
+
+    // =============================================
+    // 高德地图
+    // =============================================
+    function initMap() {
+        if (map) map.destroy();
+        let container = document.getElementById('mapContainer');
+        if (!container) return;
+
+        let centerCoords = currentPlanData ? currentPlanData.coords : [104.0657, 30.6594];
+
+        map = new AMap.Map('mapContainer', {
+            zoom: 12,
+            center: centerCoords,
+            resizeEnable: true,
+            zoomEnable: true,
+            dragEnable: true
+        });
+
+        map.addControl(new AMap.Scale());
+        map.addControl(new AMap.ToolBar({ position: 'RB' }));
+
+        if (currentPlanData) {
+            markers.forEach(m => map.remove(m));
+            markers = [];
+
+            const cityData = spotsData.find(c => c.city === currentPlanData.city);
+            if (cityData) {
+                cityData.spots.forEach((spot) => {
+                    let marker = new AMap.Marker({
+                        position: spot.coords,
+                        title: spot.name,
+                        map: map
+                    });
+
+                    let infoWindow = new AMap.InfoWindow({
+                        content: `<h4>${spot.name}</h4><p>${spot.desc.substring(0, 50)}...</p>`,
+                        offset: new AMap.Pixel(0, -30)
+                    });
+
+                    marker.on('click', () => {
+                        infoWindow.open(map, marker.getPosition());
+                    });
+
+                    markers.push(marker);
+                });
+
+                if (markers.length > 0) {
+                    map.setFitView(markers, true, [30, 30, 30, 30]);
+                }
+            }
+        }
+    }
+
+    function refreshMap() {
+        if (document.getElementById('mapPanel').style.display !== 'none') {
+            initMap();
+        }
+    }
+
+    // =============================================
+    // 用户系统（对接API）
+    // =============================================
+    function updateNavUserStatus() {
+        let btn = document.getElementById('loginBtn'), prof = document.getElementById('userProfile');
+        if (Store.state.currentUser) {
+            btn.style.display = 'none';
+            prof.style.display = 'flex';
+            document.getElementById('userNickname').innerText = Store.state.currentUser.nickname || Store.state.currentUser.account;
+        } else {
+            btn.style.display = 'block';
+            prof.style.display = 'none';
+        }
+    }
+
+    async function handleLogin() {
+        const account = document.getElementById('loginAccount').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        const rememberMe = document.getElementById('rememberMe').checked;
+
+        if (!account || !password) {
+            NotificationManager.show('请填写账号和密码', 'warning');
+            return;
+        }
+
+        LoadingManager.show('登录中...');
+        const result = await AuthAPI.login(account, password, rememberMe);
+        LoadingManager.hide();
+
+        if (result.success) {
+            Store.state.currentUser = result.data;
+            localStorage.setItem('zhiyou_current_user', account);
+            updateNavUserStatus();
+            closeLoginModal();
+            loadProfileTrips();
+            renderExpensesList();
+            renderVotes();
+            NotificationManager.show('登录成功，欢迎回来！', 'success');
+        } else {
+            NotificationManager.show(result.message || '登录失败', 'error');
+        }
+    }
+
+    async function handleRegister() {
+        const nickname = document.getElementById('regNickname').value.trim();
+        const account = document.getElementById('regAccount').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if (!nickname || !account || !password) {
+            NotificationManager.show('请填写完整信息', 'warning');
+            return;
+        }
+        if (password !== confirmPassword) {
+            NotificationManager.show('两次密码不一致', 'error');
+            return;
+        }
+        if (password.length < 6) {
+            NotificationManager.show('密码至少6位', 'warning');
+            return;
+        }
+
+        const preferences = Array.from(document.querySelectorAll('#registerPane .pref-reg:checked')).map(cb => cb.value);
+
+        LoadingManager.show('注册中...');
+        const result = await AuthAPI.register({ nickname, account, password, preferences });
+        LoadingManager.hide();
+
+        if (result.success) {
+            NotificationManager.show('注册成功，请登录', 'success');
+            switchAuthTab('login');
+        } else {
+            NotificationManager.show(result.message || '注册失败', 'error');
+        }
+    }
+
+    async function handleLogout() {
+        const result = await AuthAPI.logout();
+        if (result.success) {
+            Store.state.currentUser = null;
+            Store.state.isGuest = false;
+            updateNavUserStatus();
+            switchToPage('home');
+            NotificationManager.show('已退出登录', 'info');
+        }
+    }
+
+    function enterAsGuest() {
+        Store.state.isGuest = true;
+        Store.state.currentUser = null;
+        closeLoginModal();
+        updateNavUserStatus();
+        NotificationManager.show('游客模式，部分功能需注册', 'info');
+    }
+
+    function openLoginModal() {
+        document.getElementById('loginModal').style.display = 'flex';
+        switchAuthTab('login');
+    }
+
+    function closeLoginModal() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    function switchAuthTab(type) {
+        const loginPane = document.getElementById('loginPane'), regPane = document.getElementById('registerPane');
+        const loginTab = document.getElementById('loginTabBtn'), regTab = document.getElementById('registerTabBtn');
+        if (type === 'login') {
+            loginPane.classList.remove('hidden'); regPane.classList.add('hidden');
+            loginTab.classList.add('bg-blue-500', 'text-white'); loginTab.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+            regTab.classList.add('bg-gray-200', 'dark:bg-gray-700'); regTab.classList.remove('bg-blue-500', 'text-white');
+        } else {
+            loginPane.classList.add('hidden'); regPane.classList.remove('hidden');
+            regTab.classList.add('bg-blue-500', 'text-white'); regTab.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+            loginTab.classList.add('bg-gray-200', 'dark:bg-gray-700'); loginTab.classList.remove('bg-blue-500', 'text-white');
+        }
+    }
+
+    function openPreferences() {
+        if (!Store.state.currentUser) {
+            openLoginModal();
+            return;
+        }
+        NotificationManager.show('偏好设置功能开发中', 'info');
+    }
+
+    async function showForgetPassword() {
+        const email = prompt('请输入注册邮箱');
+        if (email) {
+            const result = await AuthAPI.forgotPassword(email);
+            NotificationManager.show(result.message, result.success ? 'success' : 'error');
+        }
+    }
+
+    // =============================================
+    // 行程管理（对接API）
+    // =============================================
+    async function loadProfileTrips() {
+        let container = document.getElementById('tripsListProfile');
+        if (!Store.state.currentUser) {
+            container.innerHTML = '<p class="text-gray-400">请登录后查看行程</p>';
+            return;
+        }
+        const result = await TripAPI.getTrips();
+        if (result.success && result.data.length > 0) {
+            Store.state.trips = result.data;
+            container.innerHTML = result.data.map((t, i) => `
+                <div class="bg-white/60 dark:bg-gray-700/60 p-3 rounded-xl">
+                    <b>${t.city} ${t.days}日</b>
+                    <button onclick="viewSavedTrip(${i})" class="text-blue-500 ml-3 text-sm">查看</button>
+                    <button onclick="deleteSavedTrip(${i})" class="text-red-500 ml-2 text-sm">删除</button>
+                </div>`).join('');
+        } else {
+            container.innerHTML = '<p class="text-gray-400">暂无行程，快去AI规划师生成吧~</p>';
+        }
+    }
+
+    async function viewSavedTrip(idx) {
+        const trips = Store.state.trips;
+        if (trips && trips[idx]) {
+            currentPlanData = trips[idx];
+            renderPlanBook(currentPlanData);
+            switchToPage('aiplanner');
+            document.querySelector('[data-aitab="basic"]').click();
+        }
+    }
+
+    async function deleteSavedTrip(idx) {
+        if (!confirm('确定删除此行程？')) return;
+        const trips = Store.state.trips;
+        if (trips && trips[idx]) {
+            const result = await TripAPI.deleteTrip(trips[idx].id);
+            if (result.success) {
+                NotificationManager.show('行程已删除', 'success');
+                loadProfileTrips();
+            }
+        }
+    }
+
+    // =============================================
+    // 记账功能（对接API）
+    // =============================================
+    async function addExpense() {
+        if (!Store.state.currentUser) {
+            openLoginModal();
+            return;
+        }
+        const desc = document.getElementById('expenseDesc').value;
+        const amount = parseFloat(document.getElementById('expenseAmount').value);
+        const category = document.getElementById('expenseCategory').value;
+
+        if (!desc || isNaN(amount)) {
+            NotificationManager.show('请填写完整', 'warning');
+            return;
+        }
+
+        const result = await ExpenseAPI.add({ desc, amount, category });
+        if (result.success) {
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            renderExpensesList();
+            NotificationManager.show('记账成功', 'success');
+        }
+    }
+
+    async function renderExpensesList() {
+        let listDiv = document.getElementById('expenseListProfile');
+        if (!Store.state.currentUser) {
+            listDiv.innerHTML = '';
+            return;
+        }
+        const result = await ExpenseAPI.getAll();
+        if (result.success) {
+            const expenses = result.data || [];
+            let total = 0, html = '';
+            expenses.slice().reverse().forEach(e => {
+                total += e.amount || 0;
+                html += `<div class="flex justify-between border-b py-1">
+                    <span>${e.desc} (${e.category})</span>
+                    <span>¥${e.amount}</span>
+                    <button onclick="deleteExpense(${e.id})" class="text-red-400 text-xs">删除</button>
+                </div>`;
+            });
+            html += `<div class="font-bold mt-2">总计: ¥${total}</div>`;
+            listDiv.innerHTML = html;
+        }
+    }
+
+    async function deleteExpense(id) {
+        const result = await ExpenseAPI.delete(id);
+        if (result.success) {
+            renderExpensesList();
+            NotificationManager.show('已删除', 'info');
+        }
+    }
+
+    // =============================================
+    // 投票功能（对接API）
+    // =============================================
+    async function createVote() {
+        if (!Store.state.currentUser) {
+            openLoginModal();
+            return;
+        }
+        const question = prompt('投票问题');
+        if (!question) return;
+        const optionsStr = prompt('选项用逗号隔开');
+        if (!optionsStr) return;
+        const options = optionsStr.split(',').map(o => o.trim()).filter(o => o);
+
+        const result = await VoteAPI.create({ question, options });
+        if (result.success) {
+            renderVotes();
+            NotificationManager.show('投票创建成功', 'success');
+        }
+    }
+
+    async function renderVotes() {
+        let container = document.getElementById('voteListProfile');
+        if (!Store.state.currentUser) {
+            container.innerHTML = '';
+            return;
+        }
+        const result = await VoteAPI.getAll();
+        if (result.success) {
+            const votes = result.data || [];
+            if (votes.length === 0) {
+                container.innerHTML = '<p>暂无投票</p>';
+            } else {
+                container.innerHTML = votes.map(v => `
+                    <div class="bg-white/60 dark:bg-gray-700/60 p-3 rounded-xl">
+                        <b>${v.question}</b>
+                        <div class="mt-2">
+                            ${v.options.map((o, idx) => `
+                                <span class="inline-block bg-gray-200 dark:bg-gray-600 rounded-full px-3 py-1 mx-1 cursor-pointer hover:bg-blue-200" onclick="voteForOption(${v.id},${idx})">
+                                    ${o.text} (${o.count})
+                                </span>
+                            `).join('')}
+                        </div>
+                        <button onclick="deleteVote(${v.id})" class="text-red-500 text-sm mt-2">删除</button>
+                    </div>
+                `).join('');
+            }
+        }
+    }
+
+    async function voteForOption(voteId, optIdx) {
+        const result = await VoteAPI.vote(voteId, optIdx);
+        if (result.success) {
+            renderVotes();
+        }
+    }
+
+    async function deleteVote(id) {
+        if (!confirm('删除此投票？')) return;
+        const result = await VoteAPI.delete(id);
+        if (result.success) {
+            renderVotes();
+            NotificationManager.show('已删除', 'info');
+        }
+    }
+
+    // =============================================
+    // 手账系统（对接API）
+    // =============================================
+    async function handlePhotoUpload(e) {
+        for (let f of e.target.files) {
+            const result = await HandbookAPI.uploadPhoto(f);
+            if (result.success) {
+                uploadedPhotos.push(result.data.url);
+            }
+        }
+        renderPhotoGallery();
+    }
+
+    function renderPhotoGallery() {
+        let html = '';
+        uploadedPhotos.forEach((p, i) => {
+            html += `<div class="relative"><img src="${p}" class="h-24 w-full object-cover rounded-lg">
+                <button onclick="removePhoto(${i})" class="absolute top-0 right-0 bg-black/60 text-white rounded-full w-5 h-5 text-xs">✖</button></div>`;
+        });
+        document.getElementById('photoGallery').innerHTML = html;
+    }
+
+    function addSticker(s) {
+        addedStickers.push(s);
+        document.getElementById('stickerArea').innerHTML = addedStickers.map(st => `<span class="text-3xl">${st}</span>`).join('');
+    }
+
+    async function saveHandbook() {
+        if (!Store.state.currentUser) {
+            openLoginModal();
+            return;
+        }
+        const title = document.getElementById('handbookTitle').value;
+        if (!title) {
+            NotificationManager.show('请写个标题', 'warning');
+            return;
+        }
+
+        const data = {
+            title,
+            notes: document.getElementById('handbookNotes').value,
+            photos: uploadedPhotos,
+            stickers: addedStickers
+        };
+
+        const result = await HandbookAPI.create(data);
+        if (result.success) {
+            NotificationManager.show('手账已珍藏', 'success');
+            uploadedPhotos = [];
+            addedStickers = [];
+            renderPhotoGallery();
+            document.getElementById('stickerArea').innerHTML = '';
+            document.getElementById('handbookTitle').value = '';
+            document.getElementById('handbookNotes').value = '';
+            viewHandbooks();
+        }
+    }
+
+    async function viewHandbooks() {
+        const result = await HandbookAPI.getAll();
+        let grid = document.getElementById('handbookGrid');
+        if (result.success && result.data.length > 0) {
+            grid.innerHTML = result.data.map(h => {
+                const cover = h.photos?.length > 0 ? h.photos[0] : 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500';
+                return `<div class="story-card bg-white dark:bg-gray-800 rounded-2xl shadow-md overflow-hidden cursor-pointer" onclick="openHandbookDetail(${h.id})">
+                    <img src="${cover}" class="h-40 w-full object-cover">
+                    <div class="p-3">
+                        <h4 class="font-bold text-lg">${h.title}</h4>
+                        <p class="text-sm text-gray-500 line-clamp-2">${h.notes?.slice(0, 60) || '无笔记'}</p>
+                        <div class="flex gap-1 mt-2 text-2xl">${h.stickers?.slice(0, 3).join(' ') || ''}</div>
+                        <span class="text-xs text-gray-400">${new Date(h.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            grid.innerHTML = '<p class="col-span-full text-center text-gray-500">暂无手账，制作一本吧~</p>';
+        }
+        document.getElementById('handbookList').classList.remove('hidden');
+        document.getElementById('handbookDetailView').classList.add('hidden');
+    }
+
+    async function openHandbookDetail(id) {
+        const result = await HandbookAPI.get(id);
+        if (result.success && result.data) {
+            const h = result.data;
+            const html = `
+                <h2 class="text-2xl font-bold mb-3">${h.title}</h2>
+                <p class="text-sm text-gray-500 mb-4">${new Date(h.createdAt).toLocaleString()}</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                    ${h.photos?.map(p => `<img src="${p}" class="handbook-detail-photo rounded-xl w-full h-48 object-cover">`).join('') || '<p class="text-gray-400">无照片</p>'}
+                </div>
+                <div class="bg-amber-50 dark:bg-gray-600 p-4 rounded-xl mb-4">
+                    <h3 class="font-bold mb-1">📝 旅行笔记</h3>
+                    <p class="whitespace-pre-line">${h.notes || '未记录'}</p>
+                </div>
+                <div class="flex flex-wrap gap-2 text-3xl">${h.stickers?.map(s => `<span>${s}</span>`).join('') || '<span class="text-gray-400 text-sm">无贴纸</span>'}</div>
+                <button onclick="deleteHandbookById(${h.id})" class="mt-4 text-red-500 text-sm">🗑️ 删除手账</button>`;
+            document.getElementById('handbookDetailContent').innerHTML = html;
+            document.getElementById('handbookList').classList.add('hidden');
+            document.getElementById('handbookDetailView').classList.remove('hidden');
+        }
+    }
+
+    function backToHandbookList() {
+        document.getElementById('handbookDetailView').classList.add('hidden');
+        document.getElementById('handbookList').classList.remove('hidden');
+    }
+
+    function closeHandbookList() {
+        document.getElementById('handbookList').classList.add('hidden');
+    }
+
+    function removePhoto(i) {
+        uploadedPhotos.splice(i, 1);
+        renderPhotoGallery();
+    }
+
+    function resetHandbookEditor() {
+        uploadedPhotos = [];
+        addedStickers = [];
+        renderPhotoGallery();
+        document.getElementById('stickerArea').innerHTML = '';
+        document.getElementById('handbookTitle').value = '';
+        document.getElementById('handbookNotes').value = '';
+    }
+
+    async function deleteHandbookById(id) {
+        if (!confirm('确定删除此手账？')) return;
+        const result = await HandbookAPI.delete(id);
+        if (result.success) {
+            NotificationManager.show('手账已删除', 'info');
+            viewHandbooks();
+        }
+    }
+
+    // =============================================
+    // 其他工具
+    // =============================================
+    function toggleProfileMenu() {
+        document.getElementById('profileMenu').classList.toggle('hidden');
+    }
+
+    function closeProfileMenu() {
+        document.getElementById('profileMenu').classList.add('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#userProfile') && !e.target.closest('#profileMenu')) {
+            document.getElementById('profileMenu')?.classList.add('hidden');
+        }
+    });
+
+    // =============================================
+    // 初始化
+    // =============================================
+    async function initPage() {
+        NotificationManager.init();
+        LoadingManager.init();
+
+        const savedAccount = localStorage.getItem('zhiyou_current_user');
+        if (savedAccount) {
+            const result = await AuthAPI.getProfile();
+            if (result.success && result.data) {
+                Store.state.currentUser = result.data;
+                updateNavUserStatus();
+            }
+        }
+
+        const remembered = localStorage.getItem('zhiyou_remember');
+        if (remembered) {
+            try {
+                const { account, password } = JSON.parse(remembered);
+                document.getElementById('loginAccount').value = account || '';
+                document.getElementById('loginPassword').value = password || '';
+                document.getElementById('rememberMe').checked = true;
+            } catch (e) {}
+        }
+
+        renderHomeStories();
+        renderSpotList();
+        renderRanking();
+        renderAllStories();
+        renderExpensesList();
+        renderVotes();
+        loadProfileTrips();
+
+        document.querySelectorAll('[data-aitab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                let tab = btn.dataset.aitab;
+                ['basicPanel', 'toolsPanel', 'personalPanel', 'assistPanel', 'voicePanel', 'mapPanel'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                document.getElementById(`${tab}Panel`).classList.remove('hidden');
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                });
+                btn.classList.add('bg-blue-500', 'text-white');
+                btn.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                if (tab === 'map') setTimeout(() => initMap(), 100);
+            });
+        });
+
+        document.getElementById('menuBtnMobile').addEventListener('click', () => {
+            NotificationManager.show('移动端菜单开发中', 'info');
+        });
+
+        document.getElementById('dayRange').addEventListener('input', (e) => {
+            document.getElementById('dayNum').innerText = e.target.value;
+        });
+    }
+
+    window.addEventListener('load', () => {
+        initPage();
+        document.getElementById('themeSwitch').onclick = () => document.documentElement.classList.toggle('dark');
+        document.getElementById('backTop').onclick = () => window.scrollTo({ top: 0 });
+        window.onscroll = () => document.getElementById('backTop').classList.toggle('hidden', window.scrollY < 500);
+    });
+
+    // =============================================
+    // 全局暴露
+    // =============================================
+    window.openStoryDetail = openStoryDetail;
+    window.openSpotDetail = openSpotDetail;
+    window.viewSavedTrip = viewSavedTrip;
+    window.deleteSavedTrip = deleteSavedTrip;
+    window.voteForOption = voteForOption;
+    window.deleteVote = deleteVote;
+    window.removePhoto = removePhoto;
+    window.deleteHandbookById = deleteHandbookById;
+    window.goBackToStories = goBackToStories;
+    window.goBack = goBack;
+    window.enterAsGuest = enterAsGuest;
+    window.switchAuthTab = switchAuthTab;
+    window.openHandbookDetail = openHandbookDetail;
+    window.backToHandbookList = backToHandbookList;
+    window.deleteExpense = deleteExpense;
+    window.saveCurrentPlan = saveCurrentPlan;
+
+    window.API_CONFIG = API_CONFIG;
+    window.ApiService = ApiService;
+    window.AuthAPI = AuthAPI;
+    window.TripAPI = TripAPI;
+    window.AIAPI = AIAPI;
+    window.HandbookAPI = HandbookAPI;
+    window.ExpenseAPI = ExpenseAPI;
+    window.VoteAPI = VoteAPI;
+    window.ContentAPI = ContentAPI;
+    window.Store = Store;
+</script>
+</body>
+</html>
