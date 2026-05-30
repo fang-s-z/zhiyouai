@@ -201,24 +201,24 @@
             <div class="grid md:grid-cols-3 gap-8 text-center">
                 <div onclick="switchToPage('aiplanner')" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-robot text-5xl text-primary mb-3"></i><h3 class="text-xl font-bold">AI行程师</h3><p class="text-gray-600 dark:text-gray-300">根据你的喜好定制独一无二的故事线</p></div>
                 <div onclick="switchToPage('handbook')" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-journal-whills text-5xl text-green-500 mb-3"></i><h3 class="text-xl font-bold">手账珍藏馆</h3><p class="text-gray-600 dark:text-gray-300">照片+笔记+贴纸，永久封存旅途感动</p></div>
-                <div onclick="switchToPage('aiplanner'); setTimeout(()=>document.querySelector('[data-aitab="map"]').click(), 100)" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-map-location-dot text-5xl text-red-500 mb-3"></i><h3 class="text-xl font-bold">灵动地图动线</h3><p class="text-gray-600 dark:text-gray-300">智能串联景点，不走回头路</p></div>
+                <div onclick="switchToPage('aiplanner'); setTimeout(()=>refreshMap(), 100)" class="glass-panel p-6 rounded-2xl cursor-pointer card-hover"><i class="fa-solid fa-map-location-dot text-5xl text-red-500 mb-3"></i><h3 class="text-xl font-bold">灵动地图动线</h3><p class="text-gray-600 dark:text-gray-300">智能串联景点，不走回头路</p></div>
+            </div>
         </div>
-    </div>
-    <div class="container mx-auto px-5 py-8 border-t border-gray-200 dark:border-gray-700">
-        <h2 class="text-3xl font-title mb-2 text-center">📝 旅人笔记 · 真实故事</h2>
-        <p class="text-center text-gray-500 mb-8">点击卡片，阅读完整旅途回忆</p>
-        <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-6" id="storyGridHome"></div>
-    </div>
-    <div class="container mx-auto px-5 py-8 grid md:grid-cols-2 gap-8">
-        <div class="bg-white/60 dark:bg-gray-800/60 rounded-2xl p-5 shadow">
-            <h3 class="text-2xl font-title mb-4 flex items-center"><i class="fa-regular fa-compass text-primary mr-2"></i> 必去景点推荐</h3>
-            <div class="space-y-4" id="spotRecommendList"></div>
+        <div class="container mx-auto px-5 py-8 border-t border-gray-200 dark:border-gray-700">
+            <h2 class="text-3xl font-title mb-2 text-center">📝 旅人笔记 · 真实故事</h2>
+            <p class="text-center text-gray-500 mb-8">点击卡片，阅读完整旅途回忆</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-6" id="storyGridHome"></div>
         </div>
-        <div class="bg-white/60 dark:bg-gray-800/60 rounded-2xl p-5 shadow">
-            <h3 class="text-2xl font-title mb-4 flex items-center"><i class="fa-solid fa-fire-flame-curved text-red-500 mr-2"></i> 热门城市排行榜</h3>
-            <div class="space-y-2" id="cityRankingList"></div>
+        <div class="container mx-auto px-5 py-8 grid md:grid-cols-2 gap-8">
+            <div class="bg-white/60 dark:bg-gray-800/60 rounded-2xl p-5 shadow">
+                <h3 class="text-2xl font-title mb-4 flex items-center"><i class="fa-regular fa-compass text-primary mr-2"></i> 必去景点推荐</h3>
+                <div class="space-y-4" id="spotRecommendList"></div>
+            </div>
+            <div class="bg-white/60 dark:bg-gray-800/60 rounded-2xl p-5 shadow">
+                <h3 class="text-2xl font-title mb-4 flex items-center"><i class="fa-solid fa-fire-flame-curved text-red-500 mr-2"></i> 热门城市排行榜</h3>
+                <div class="space-y-2" id="cityRankingList"></div>
+            </div>
         </div>
-    </div>
     </div>
 
     <!-- 故事集页面 -->
@@ -359,29 +359,15 @@
         </div>
     </div>
 
-    <!-- 🔥 升级：AI规划师 -->
+    <!-- 🔥 AI规划师 - 合并所有功能 -->
     <div id="page-aiplanner" class="page">
-        <div class="container mx-auto px-5">
-            <div class="text-center mb-6">
+        <div class="container mx-auto px-5 pb-8">
+            <div class="text-center mb-8">
                 <h2 class="text-4xl font-title">🧠 AI 智能旅行规划师</h2>
-                <button onclick="toggleApiKeyInput()" class="text-xs underline opacity-70">⚙️ API设置</button>
-                <div id="apiKeyBox" class="hidden mt-2">
-                    <input id="apiKeyInput" type="password" placeholder="OpenAI Key" class="border p-1 rounded">
-                    <button onclick="saveApiKey()" class="bg-green-600 text-white px-3 ml-1 rounded">保存</button>
-                </div>
             </div>
 
-            <div class="flex flex-wrap justify-center gap-2 mb-5">
-                <button class="tab-btn bg-blue-500 text-white px-4 py-2" data-aitab="basic">📋 基础规划</button>
-                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="tools">🔧 实用工具</button>
-                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="personal">✨ 个性定制</button>
-                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="assist">💬 出行助手</button>
-                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="voice">🎤 语音规划</button>
-                <button class="tab-btn bg-gray-200 dark:bg-gray-700 px-4 py-2" data-aitab="map">🗺️ 地图动线</button>
-            </div>
-
-            <!-- 基础规划（升级） -->
-            <div id="basicPanel" class="glass-panel p-5 rounded-2xl">
+            <!-- 基础规划 -->
+            <div id="basicPanel" class="glass-panel p-5 rounded-2xl mb-6">
                 <div class="grid lg:grid-cols-2 gap-6">
                     <div class="bg-white/50 dark:bg-gray-800/50 p-5 rounded-2xl space-y-3">
                         <div class="grid grid-cols-2 gap-2">
@@ -442,8 +428,8 @@
                 </div>
             </div>
 
-            <!-- 实用工具（细化） -->
-            <div id="toolsPanel" class="hidden grid md:grid-cols-2 gap-5 mt-4">
+            <!-- 实用工具 -->
+            <div id="toolsPanel" class="grid md:grid-cols-2 gap-5 mb-6">
                 <div class="glass-panel p-4">
                     <h3 class="font-bold">🚆 交通方案对比</h3>
                     <p class="text-sm text-gray-500 mb-2">高铁/飞机/自驾详细对比</p>
@@ -475,8 +461,8 @@
                 </div>
             </div>
 
-            <!-- 个性定制（升级） -->
-            <div id="personalPanel" class="hidden grid md:grid-cols-2 gap-5 mt-4">
+            <!-- 个性定制 -->
+            <div id="personalPanel" class="grid md:grid-cols-2 gap-5 mb-6">
                 <div class="glass-panel p-4">
                     <h3 class="font-bold">💰 预算智能分配</h3>
                     <input id="totalBudget" type="number" placeholder="总预算" class="border p-1 w-full" value="5000">
@@ -504,8 +490,8 @@
                 </div>
             </div>
 
-            <!-- 出行助手（细化） -->
-            <div id="assistPanel" class="hidden grid md:grid-cols-2 gap-5 mt-4">
+            <!-- 出行助手 -->
+            <div id="assistPanel" class="grid md:grid-cols-2 gap-5 mb-6">
                 <div class="glass-panel p-4">
                     <h3 class="font-bold">💬 旅行AI问答</h3>
                     <textarea id="qaQuestion" rows="2" placeholder="任何旅行问题..." class="border p-1 w-full"></textarea>
@@ -523,7 +509,7 @@
             </div>
 
             <!-- 语音规划 -->
-            <div id="voicePanel" class="hidden text-center glass-panel p-6 mt-4">
+            <div id="voicePanel" class="text-center glass-panel p-6 mb-6">
                 <h3 class="font-bold">🎙️ 语音对话规划</h3>
                 <button onclick="startVoiceRecognition()" class="bg-purple-600 text-white px-6 py-3 rounded-full">
                     <i class="fa-solid fa-microphone"></i> 开始说话
@@ -532,8 +518,8 @@
                 <button onclick="processVoiceCommand()" class="mt-2 bg-blue-600 text-white px-4 py-1 rounded">识别生成行程</button>
             </div>
 
-            <!-- 地图动线（真实坐标） -->
-            <div id="mapPanel" class="hidden glass-panel p-4 mt-4">
+            <!-- 地图动线 -->
+            <div id="mapPanel" class="glass-panel p-4">
                 <h3 class="font-bold">🗺️ 行程动态地图</h3>
                 <div id="mapContainer" class="w-full rounded-2xl"></div>
                 <button onclick="refreshMap()" class="mt-2 bg-blue-500 text-white px-4 py-1 rounded">刷新路线</button>
@@ -602,14 +588,14 @@
     const storiesData = [
         { id: 1, title: "洱海骑行日记", author: "风一样的旅人", location: "大理", cover: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500", content: "在洱海边骑车，风里有自由的味道。", fullContent: "清晨从古城出发，租了一辆小电驴沿着环海西路骑行。天空蓝得像油画，路过喜洲古镇吃了破酥粑粑。傍晚在双廊看日落，金色的光洒在水面上，那一刻觉得人间值得。", images: ["https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800", "https://images.unsplash.com/photo-1528543606781-2f6e6857f318?w=800"], tags: ["治愈", "骑行"] },
         { id: 2, title: "稻城亚丁徒步", author: "山川可期", location: "稻城", cover: "https://images.unsplash.com/photo-1500835556837-99ac94a94552?w=500", content: "海拔4700米，牛奶海的颜色令人震撼。", fullContent: "从洛绒牛场开始徒步，一路上雪山、草甸、溪流相伴。爬到牛奶海的时候心跳加速，但那抹蒂芙尼蓝真的震撼。五色海更高，风很大，记得带氧气瓶。", images: ["https://images.unsplash.com/photo-1473186578172-c141e6798cf4?w=800", "https://images.unsplash.com/photo-1530789253388-930c80bdc8a6?w=800"], tags: ["徒步", "摄影"] },
-        { id: 3, title: "京都红叶狩", author: "京都小住", location: "京都", cover: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=500", content: "红叶季的哲学之道，像走进了电影画面。", fullContent: "十一月底的京都，红叶见顷。清水寺的舞台被红叶包围，夜间参拜灯光秀梦幻。岚山竹林小径人潮汹涌，但天龙寺的庭院幽静。", images: ["https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800", "https://images.unsplash.com/photo-1551641506-ee5bf4cb45f1?w=800"], tags: ["人文", "禅意"] },
+        { id: 3, title: "京都红叶狩", author: "京都小住", location: "京都", cover: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=500", content: "红叶季的哲学之道，像走进了电影画面。", fullContent: "十一月底的京都，红叶见顷。清水寺的舞台被红叶包围，夜间参拜灯光秀梦幻。岚山竹林小径人潮汹涌，但天龙寺的庭院幽静。", images: ["https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800", "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800"], tags: ["人文", "禅意"] },
         { id: 4, title: "成都慢生活", author: "吃客不胖", location: "成都", cover: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=500", content: "茶馆、火锅、大熊猫，巴适得板！", fullContent: "成都的节奏太舒服了，人民公园鹤鸣茶社点一杯盖碗茶，掏耳朵。大熊猫基地看幼崽翻滚。晚上吃火锅，一定要点鸭肠和毛肚。", images: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800"], tags: ["美食", "休闲"] },
-        { id: 5, title: "厦门文艺之旅", author: "海风日记", location: "厦门", cover: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=500", content: "鼓浪屿的小巷，沙坡尾的咖啡馆。", fullContent: "在鼓浪屿住了一晚，清晨没有游客的时候最美。日光岩俯瞰全岛，菽庄花园精巧。沙坡尾很多设计师店铺，艺术西区适合拍照。", images: ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800"], tags: ["文艺", "海岛"] },
+        { id: 5, title: "厦门文艺之旅", author: "海风日记", location: "厦门", cover: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=500", content: "鼓浪屿的小巷，沙坡尾的咖啡馆。", fullContent: "在鼓浪屿住了一晚，清晨没有游客的时候最美。日光岩俯瞰全岛，菽庄花园精巧。沙坡尾很多设计师店铺，艺术西区适合拍照。", images: ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800", "https://images.unsplash.com/photo-1472214103451-9374bd1c798c?w=800"], tags: ["文艺", "海岛"] },
         { id: 6, title: "西安古都寻梦", author: "长安客", location: "西安", cover: "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?w=500", content: "兵马俑震撼，不夜城璀璨。", fullContent: "兵马俑一定要请讲解，否则就是看泥人。大雁塔北广场音乐喷泉壮观。晚上大唐不夜城仿佛穿越，汉服小姐姐很多。", images: ["https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800", "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800"], tags: ["历史", "美食"] },
         { id: 7, title: "重庆魔幻8D", author: "山城棒棒", location: "重庆", cover: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=500", content: "洪崖洞像千与千寻，轻轨穿楼。", fullContent: "导航没用，问路更靠谱。洪崖洞夜景绝美，但人巨多。李子坝轻轨穿楼打卡。南山一棵树看全城。", images: ["https://images.unsplash.com/photo-1585409677983-0f6c41ca9c3b?w=800", "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=800"], tags: ["魔幻", "美食"] },
         { id: 8, title: "新疆伊犁草原", author: "牧羊人", location: "伊犁", cover: "https://images.unsplash.com/photo-1506260408121-e353d10b87c7?w=500", content: "那拉提的六月，像宫崎骏动画里的夏天。", fullContent: "伊犁的草原惊艳，那拉提空中草原，喀拉峻人体草原，琼库什台原始村落。自驾独库公路，一天经历四季。", images: ["https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=800", "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800"], tags: ["自然", "自驾"] },
         { id: 9, title: "三亚蓝色假期", author: "海浪声声", location: "三亚", cover: "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=500", content: "亚龙湾的沙细如粉，蜈支洲岛潜水绝佳。", fullContent: "亚龙湾的沙质洁白细腻，海水湛蓝。蜈支洲岛潜水能看到珊瑚和鱼群。鹿回头俯瞰三亚湾夜景，浪漫至极。", images: ["https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=800", "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800"], tags: ["海岛", "潜水"] },
-        { id: 10, title: "拉萨心灵之旅", author: "朝圣者", location: "拉萨", cover: "https://images.unsplash.com/photo-1559628376-f3fe5f782a2e?w=500", content: "布达拉宫的雄伟，大昭寺的虔诚。", fullContent: "布达拉宫台阶虽高，但俯瞰全城值得。大昭寺门前磕长头的信徒让人动容。八廓街转经，甜茶馆喝甜茶，时间慢了下来。", images: ["https://images.unsplash.com/photo-1580657018950-c7f7d6a6d990?w=800", "https://images.unsplash.com/photo-1569288063643-5e5a4c5b8f0e?w=800"], tags: ["信仰", "高原"] }
+        { id: 10, title: "拉萨心灵之旅", author: "朝圣者", location: "拉萨", cover: "https://images.unsplash.com/photo-1559628376-f3fe5f782a2b?w=500", content: "布达拉宫的雄伟，大昭寺的虔诚。", fullContent: "布达拉宫台阶虽高，但俯瞰全城值得。大昭寺门前磕长头的信徒让人动容。八廓街转经，甜茶馆喝甜茶，时间慢了下来。", images: ["https://images.unsplash.com/photo-1580657018950-c7f7d6a6d990?w=800", "https://images.unsplash.com/photo-1569288063643-5e5a4c5b8f0e?w=800"], tags: ["信仰", "高原"] }
     ];
 
     const spotsData = [
@@ -626,7 +612,7 @@
         { city: "厦门", spots: [
                 { name: "鼓浪屿", desc: "万国建筑博览群，日光岩顶可俯瞰全岛风貌，菽庄花园、钢琴博物馆、龙头路小吃街，需乘船前往。", img: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400" },
                 { name: "环岛路", desc: "沿海而建的马拉松赛道，黄厝沙滩、曾厝垵、胡里山炮台，适合骑行或慢跑，海天一色。", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400" },
-                { name: "曾厝垵", desc: "从原始渔村蜕变成文艺青年聚集地，布满特色民宿、文创店、海鲜排档，夜晚尤其热闹。", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400" }
+                { name: "曾厝垵", desc: "从原始渔村蜕变成文艺青年聚集地，布满特色民宿、文创店、海鲜排档，夜晚尤其热闹。", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798c?w=400" }
             ]},
         { city: "西安", spots: [
                 { name: "兵马俑", desc: "世界第八大奇迹，数千个真人大小的陶俑神态各异，一号坑最为震撼，建议聘请讲解员。", img: "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?w=400" },
@@ -708,7 +694,7 @@
         if (pageId === 'profile') { loadProfileTrips(); renderExpensesList(); renderVotes(); }
         if (pageId === 'handbook') resetHandbookEditor();
         if (pageId === 'stories') renderAllStories();
-        if (pageId === 'aiplanner' && document.querySelector('[data-aitab="map"].active')) setTimeout(refreshMap, 200);
+        if (pageId === 'aiplanner') setTimeout(refreshMap, 200);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     window.switchToPage = switchToPage;
@@ -857,9 +843,7 @@
         `;
     }
     function startVoiceRecognition() { alert('模拟语音识别'); document.getElementById('voiceText').innerText = '我想去三亚5天'; }
-    function processVoiceCommand() { if (document.getElementById('voiceText').innerText.includes('三亚')) { document.getElementById('cityInput').value = '三亚'; generatePlanWithAI(); switchToPage('aiplanner'); document.querySelector('[data-aitab="basic"]').click(); } else alert('模拟: 已识别指令'); }
-    function toggleApiKeyInput() { document.getElementById('apiKeyBox').classList.toggle('hidden'); }
-    function saveApiKey() { alert('API Key已保存(模拟)'); }
+    function processVoiceCommand() { if (document.getElementById('voiceText').innerText.includes('三亚')) { document.getElementById('cityInput').value = '三亚'; generatePlanWithAI(); } else alert('模拟: 已识别指令'); }
 
     // 高德地图（真实城市坐标）
     function initMap() {
@@ -883,7 +867,7 @@
         }
     }
     function refreshMap() {
-        if (document.getElementById('mapPanel').style.display !== 'none') initMap();
+        initMap();
     }
 
     // 用户系统
@@ -940,7 +924,7 @@
         if (trips.length === 0) container.innerHTML = '<p class="text-gray-400">暂无行程，快去AI规划师生成吧~</p>';
         else container.innerHTML = trips.map((t,i) => `<div class="bg-white/60 p-3 rounded-xl"><b>${t.city} ${t.days}日</b><button onclick="viewSavedTrip(${i})" class="text-blue-500 ml-3 text-sm">查看</button><button onclick="deleteSavedTrip(${i})" class="text-red-500 ml-2 text-sm">删除</button></div>`).join('');
     }
-    function viewSavedTrip(idx) { let trips = JSON.parse(localStorage.getItem(`zhiyou_trips_${currentUser.account}`) || '[]'); currentPlanData = trips[idx]; renderPlanBook(currentPlanData); switchToPage('aiplanner'); document.querySelector('[data-aitab="basic"]').click(); }
+    function viewSavedTrip(idx) { let trips = JSON.parse(localStorage.getItem(`zhiyou_trips_${currentUser.account}`) || '[]'); currentPlanData = trips[idx]; renderPlanBook(currentPlanData); switchToPage('aiplanner'); }
     function deleteSavedTrip(idx) { let trips = JSON.parse(localStorage.getItem(`zhiyou_trips_${currentUser.account}`) || '[]'); trips.splice(idx,1); localStorage.setItem(`zhiyou_trips_${currentUser.account}`, JSON.stringify(trips)); loadProfileTrips(); }
     function addExpense() {
         if (!currentUser) return openLoginModal();
@@ -1186,16 +1170,6 @@
             });
         }
 
-        document.querySelectorAll('[data-aitab]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                let tab = btn.dataset.aitab;
-                ['basicPanel','toolsPanel','personalPanel','assistPanel','voicePanel','mapPanel'].forEach(id => document.getElementById(id).classList.add('hidden'));
-                document.getElementById(`${tab}Panel`).classList.remove('hidden');
-                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('bg-blue-500','text-white'); b.classList.add('bg-gray-200','dark:bg-gray-700'); });
-                btn.classList.add('bg-blue-500','text-white'); btn.classList.remove('bg-gray-200','dark:bg-gray-700');
-                if (tab === 'map') setTimeout(() => initMap(), 100);
-            });
-        });
         document.getElementById('menuBtnMobile').addEventListener('click', () => alert('移动端菜单（可扩展）'));
     }
     window.addEventListener('load', () => {
